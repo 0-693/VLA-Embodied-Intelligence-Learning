@@ -368,107 +368,94 @@ RT-1 通过将图像、语言和动作任务视为序列建模问题，采用 Tr
 
 ![RT-2](pic/RT-2.png) 
 
+- 实现语义泛化能力和推理能力的涌现，例如理解图标、数字、相对关系、甚至执行多步骤规划。
+
+![RT-2](pic/RT-2.png) 
 
 ---
+
 #### RT-2 模型架构详解
 
 ① **图像编码器（Vision Encoder）**
 
-RT-2 使用 **Vision Transformer（ViT）** 来编码图像输入。图像会被划分为若干个 patch，并通过 ViT 转换为一系列图像 tokens。这些 token 表示图像的不同区域。
+RT-2 使用 **Vision Transformer（ViT）** 编码图像输入。图像首先被划分为固定大小的 patch，再转换为一系列图像 token，表示图像中各局部区域的特征。
 
-- **输入格式**：图像经过 ViT 生成图像 tokens：
+- **输入格式**：
+  ```text
+  [图像] → [图像 token_1, ..., 图像 token_n]
   ```
-  [图像] → [图像 token_1, token_2, ..., token_n]
-  ```
-  这里的每个 token 是图像的一个部分（patch）表示。
 
 
 
 ② **语言编码器（Text Encoder）**
 
-RT-2 使用一个强大的预训练语言模型（如 PaLM-E 或 PaLI-X）来编码语言指令。该语言模型将自然语言指令转换为固定长度的语义向量。
+RT-2 使用预训练语言模型（如 PaLM-E 或 PaLI-X）编码自然语言指令，将其转化为 token 序列，表示指令的语义信息。
 
-- **输入格式**：语言指令被转换为 token 序列：
+- **输入格式**：
+  ```text
+  [指令] → [语言 token_1, ..., 语言 token_m]
   ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-  这里的每个 token 表示一句话中的一个单词或子词。
-
-
 
 ③ **特征融合与位置编码**
 
-将图像 tokens 和语言 tokens 进行拼接，形成一个联合的输入序列。为了让 Transformer 理解每个 token 的来源（图像或语言），RT-2 使用了位置编码和 token 类型编码。
+图像 token 与语言 token 被拼接成一个统一的序列，送入 Transformer 编码器。RT-2 使用**位置编码**与**类型嵌入（Modality Type Embedding）**标识每个 token 的来源（图像或语言）。
 
-- **token 格式**：图像 token 和语言 token 被拼接成一个联合序列：
+- **拼接格式**：
+  ```text
+  [图像 token_1, ..., token_n] + [语言 token_1, ..., token_m] → [融合 token_1, ..., token_{n+m}]
   ```
-  [图像 token_1, token_2, ..., token_n] + [指令 token_1, token_2, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
-  ```
-
-
 
 ④ **多层 Transformer 编码器**
 
-拼接后的图像和语言 tokens 被送入多层 **Transformer 编码器** 中。Transformer 中的多头自注意力机制能够捕捉图像与语言之间的复杂关系。输出的 token 表示了两种模态的融合信息。
+联合的 token 序列经过多层 Transformer 编码器处理，通过多头自注意力机制学习图像与语言之间的深层语义交互。
 
-- **输出格式**：Transformer 输出的 token 序列包括来自图像和语言的上下文信息：
+- **输出格式**：
+  ```text
+  [融合 token_1, ..., token_{n+m}] → [表示 token_1, ..., token_{n+m}]
   ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
-  ```
-
 
 
 ⑤ **动作离散化（Action Discretization）**
 
-RT-2 将机器人的控制动作离散化为多个 bins，每个动作维度（如位置或旋转）会被离散化为 256 个 bin，每个 bin 对应一个 token。
+RT-2 将连续的机器人控制动作（如位置、角度、夹爪张合）**离散化为固定区间的 token**。每个动作维度被划分为 256 个 bin，每个 bin 映射为一个独立 token。
 
-- **token 格式**：动作的每个维度被离散化为 256 个 token：
-  ```
-  [动作维度_1] → [动作 token_1, token_2, ..., token_256]
-  [动作维度_2] → [动作 token_257, token_258, ..., token_512]
-  ```
-  这里每个动作维度（如位置或角度）都生成一个包含 256 个 token 的序列。
-
+- **离散化结果**：
+  - 总共有 8 个动作维度（如 3 轴平移、3 轴旋转、夹爪、终止指令）；
+  - 每个维度使用 1 个 token，最终动作表示为：
+    ```text
+    [动作 token_1, ..., 动作 token_8]
+    ```
 
 
 ⑥ **动作头（Action Head）**
 
-RT-2 使用多个并行的分类器（一个分类器对应一个动作维度）来预测每个动作的 token。每个分类器输出一个 256 维的概率分布，表示该动作维度的离散化控制值。最终的动作是这些 token 序列的组合。
+RT-2 的动作输出部分由 **8 个并行分类器（每个对应一个动作维度）**组成。每个分类器从共享的 Transformer 输出中提取相应 token 表示，并预测 256 个 bin 的概率分布。
 
-- **token 格式**：每个动作维度通过分类器输出 256 个 token：
+- **输出格式**：
+  ```text
+  每个分类器输出 1 个 token ∈ {0, ..., 255}
+  → 最终动作 token 序列 = 8 个 token
   ```
-  [动作 token_1, token_2, ..., token_256] + [动作 token_257, token_258, ..., token_512] → [完整的动作 token 序列]
-  ```
 
 
+⑦ **推理过程（Auto-regressive Inference）**
 
-⑦ **推理过程（Inference）**
-
-在推理阶段，RT-2 逐步生成动作 token 序列。每一步，模型根据之前生成的动作 token 和当前输入的图像与语言条件预测下一个动作 token。最终，生成的动作 token 序列将被解码为连续的动作值。
+推理阶段，RT-2 采用**自回归生成（auto-regressive decoding）**策略：模型根据当前图像、语言输入以及已生成的动作 token 逐步预测下一个动作 token，直到输出完整的动作序列。
 
 - **生成过程**：
+  ```text
+  [图像 token] + [语言 token] + [已生成动作 token] → [下一个动作 token]
   ```
-  [图像 token] + [指令 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-  每一步生成一个新的动作 token，直到生成完整的动作序列。
-
 
 
 ⑧ **动作解码（Action Decoding）**
 
-生成的动作 token 序列通过解码器被转化为连续的控制信号。每个 token 会根据其对应的离散区间（由 bin 中心表示）进行解码。
+最终的动作 token 序列会根据各 bin 对应的中心值映射回连续控制量，得到实际的机器人控制信号。
 
 - **解码格式**：
+  ```text
+  [动作 token_1, ..., token_8] → [连续动作值_1, ..., 值_8]
   ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-  生成的 token 会映射回实际的控制信号，最终得到机器人执行的动作。
-
-
-
-⑨ **总结**
-
-RT-2 架构利用图像和语言的多模态信息，通过 **Transformer** 进行有效的特征融合。它将机器人控制动作离散化为 token，并使用多个分类器来逐步预测动作序列，最终通过解码生成连续的控制信号。这一方法能够处理图像与语言之间的复杂关系，具有很强的任务泛化能力。
 
 --- 
 
@@ -480,105 +467,50 @@ RT-2 架构利用图像和语言的多模态信息，通过 **Transformer** 进�
 ![RT-Trajectory](pic/RT-Trajectory.png) 
 
 ---
+
 #### RT-Trajectory 模型架构详解
 
+① **图像编码器（Vision Encoder）**  
+RT-Trajectory 使用 **EfficientNet-B3（ImageNet预训练）** 作为图像编码器。模型输入为 **连续6帧的RGB图像**，用于构建上下文信息。
 
-
-① **图像编码器（Vision Encoder）**
-
-RT-Trajectory 使用 **EfficientNet** 作为图像编码器，将输入的 RGB 图像转换为图像 token。这些图像 token 包含了图像的视觉信息，并将作为 Transformer 的输入。
-
-- **Token 格式**：每个图像被划分成多个 patch，每个 patch 对应一个 token，形状为 `(batch_size, num_patches, embedding_dim)`。
-
-
-
-② **轨迹草图编码器（Trajectory Sketch Encoder）**
-
-RT-Trajectory 引入了一个 **2D轨迹草图** 来作为任务的条件输入。草图被用来描述机器人的运动轨迹，通过将其转化为图像 token 来进行编码。
-
-- **Token 格式**：轨迹草图通过图像编码器处理，生成轨迹的 token 序列：
-  ```
-  [轨迹草图] → [轨迹 token_1, token_2, ..., token_m]
+- 输入格式：
+  ```text
+  [xₜ₋₅, xₜ₋₄, ..., xₜ]，共6帧RGB图像（每帧尺寸 H×W×3）
   ```
 
-  轨迹草图可以是人工绘制的，也可以通过其他方法（如视频或自动化工具）生成。
+② **轨迹草图作为条件输入（Trajectory Sketch Conditioning）**  
+轨迹草图以图像形式表示，并与RGB图像**在通道维度拼接**，形成一个多通道图像输入（非独立token序列）。
 
-
-
-③ **特征融合与位置编码**
-
-将图像 token 和轨迹草图 token 拼接成一个联合序列，形成最终的输入。RT-Trajectory 会为这些 token 添加 **位置编码** 和 **token 类型标记**，使模型能够区分图像和轨迹草图的不同来源。
-
-- **Token 格式**：拼接后的 token 序列形状为：
-  ```
-  [图像 token_1, ..., token_n] + [轨迹 token_1, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
+- 拼接格式：
+  ```text
+  图像输入形状：(H, W, 3)，轨迹草图形状：(H, W, 3)
+  所有图像在通道维度拼接：6帧图像 → 18通道，轨迹草图 → 3通道，最终输入为 21 通道图像。
+  拼接后输入形状：(H, W, 21)，送入EfficientNet
   ```
 
+- 为支持草图输入，EfficientNet 的第一层卷积增加了输入通道，并将新增通道权重初始化为全零。
 
+③ **Transformer 策略编码器（Transformer Policy Encoder）**  
+图像编码器输出的特征序列输入到一个 **Transformer** 中，生成用于策略预测的高维语义表示。
 
-④ **多层 Transformer 编码器**
+- Transformer 提取图像+草图融合特征，构建时序上下文。
 
-拼接后的联合 token 序列被输入到 **Transformer 编码器** 中。该编码器包含多个自注意力层和前馈网络，负责在图像和轨迹之间建立深层次的联系。
+④ **动作预测（Action Prediction Head）**  
+RT-Trajectory 将动作离散为 8 个维度（7个末端执行器自由度 + 1个终止动作），每个维度使用一个独立的 **256类 softmax 分类器**。
 
-- **输出格式**：Transformer 的输出是一个融合了图像和轨迹信息的 token 序列：
-  ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
-  ```
-
-
-
-⑤ **动作预测（Action Prediction）**
-
-在 RT-Trajectory 中，动作的生成是基于条件轨迹草图的。通过自回归方式，模型逐步生成动作的 token 序列。
-
-- **Token 生成**：模型逐步生成每个动作的 token，类似语言模型的生成过程：
-  ```
-  [图像 token] + [轨迹 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-  每个动作的 token 都对应一个动作的控制值，最终形成一个完整的动作序列。
-
-
-
-⑥ **推理过程（Inference）**
-
-推理时，RT-Trajectory 会基于轨迹草图和图像生成动作序列。每生成一个动作 token，都会更新输入并继续生成下一个 token，直到完成整个动作序列。
-
-- **推理格式**：
-  ```
-  [图像 token] + [轨迹 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
+- 非自回归，**一次性输出完整动作 token 序列**：
+  ```text
+  输出: [a₁, a₂, ..., a₈]，其中每个 aᵢ ∈ {0, ..., 255}
   ```
 
+⑤ **动作解码（Action Decoding）**  
+动作 token 映射回连续控制值（如位置、角度），通过查表或bin中心反量化得到真实控制信号。
 
-
-⑦ **动作解码（Action Decoding）**
-
-生成的动作 token 序列通过解码器映射回连续的控制信号。每个动作的 token 会映射回其对应的动作值。
-
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
+- 解码格式：
+  ```text
+  [a₁, ..., a₈] → [Δx, Δy, Δz, Δroll, Δpitch, Δyaw, gripper, done]
   ```
 
-  生成的 token 序列会还原为实际的控制信号，最终得到机器人执行的动作。
-
-
-⑧ **总结**
-
-- **输入格式**：
-  ```
-  [图像 token] + [轨迹 token] → [动作 token_1, token_2, ..., token_k]
-  ```
-
-- **生成过程**：
-  ```
-  [图像 token] + [轨迹 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-架构利用 **2D轨迹草图** 作为任务条件，并结合 **Transformer** 模型进行任务执行。它通过 **自回归生成** 动作序列，并通过解码生成机器人可执行的动作控制信号，能够处理新的任务，并具备较强的泛化能力。
 
 ---
 
@@ -592,84 +524,77 @@ RT-Trajectory 引入了一个 **2D轨迹草图** 来作为任务的条件输入�
 
 ---
 
-### OpenVLA 模型架构详解
+#### OpenVLA 模型架构详解
 
-OpenVLA 是一个基于视觉-语言-动作（VLA）的多模态机器人控制模型，其输入包括图像观测和语言指令，输出为7维离散机器人控制动作（如位置、速度等）。该模型通过结合 Llama 2 和视觉编码器，能够处理多个机器人控制任务并支持高效的微调。
+OpenVLA 是一个基于视觉-语言-动作（VLA）的多模态机器人控制模型，其输入包括图像观测和语言指令，输出为7维离散化的机器人控制动作。该模型结合了 Llama 2 语言模型与多尺度视觉编码器，支持多机器人通用控制任务，并具备参数高效的微调能力。
 
-① **图像编码器（视觉编码器）**
+① **视觉编码器（Vision Encoder）**
 
-OpenVLA 使用结合了 **DINOv2** 和 **SigLIP** 视觉编码器的模型。图像输入首先通过这两个预训练的视觉模型进行处理，提取图像的多尺度特征。DINOv2 提供了高层语义信息，而 SigLIP 提供了低层空间特征，它们的特征会被拼接并送入模型。
+OpenVLA 采用了融合 **DINOv2** 与 **SigLIP** 的双视觉编码器架构。图像首先通过两个独立的预训练编码器分别提取高层语义特征（DINOv2）与低层空间细节（SigLIP），随后将两者的输出在通道维度拼接形成最终图像特征。
 
-- **输入格式**：图像经过 DINOv2 和 SigLIP 编码器生成图像 tokens：
-  ```
-  [图像] → [图像 token_1, token_2, ..., token_n]
-  ```
-
-② **语言编码器（语言模型）**
-
-OpenVLA 使用 **Llama 2 7B** 作为其语言模型（LLM）基础，负责将自然语言指令转换为固定长度的语义向量。Llama 2 是一个大规模预训练的语言模型，能够理解并生成自然语言。
-
-- **输入格式**：语言指令经过 Llama 2 编码为 token 序列：
-  ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
+- **输入格式**：
+  ```text
+  图像 → SigLIP特征 + DINOv2特征 → 拼接后图像 token 序列
   ```
 
-③ **图像和语言特征融合**
+② **语言编码器（LLM）**
 
-将图像 tokens 和语言 tokens 进行拼接，形成一个联合输入序列。为了使 Transformer 理解每个 token 的来源，OpenVLA 会添加位置编码和 token 类型标记，明确区分图像和语言信息。
+OpenVLA 使用 **Llama 2-7B** 作为语言模型主干，将自然语言任务指令编码为 token 序列，并在视觉引导下生成控制动作。
 
-- **token 格式**：图像 tokens 和语言 tokens 被拼接形成联合序列：
+- **输入格式**：
+  ```text
+  指令文本 → tokenizer → 语言 token 序列
   ```
-  [图像 token_1, token_2, ..., token_n] + [指令 token_1, token_2, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
+
+③ **视觉与语言融合**
+
+图像特征经过投影映射器（MLP Projector）转换到 LLM 的输入空间后，与语言 token 序列拼接，作为 LLM 的输入。Transformer 编码器利用自注意力机制对联合序列进行深度交互建模，实现跨模态对齐与融合。
+
+- **融合格式**：
+  ```text
+  [视觉 token_1, ..., token_n] + [语言 token_1, ..., token_m] → 联合输入序列
   ```
 
-④ **多层 Transformer 编码器**
+④ **自回归动作生成**
 
-拼接后的图像和语言 tokens 被输入到 **Transformer 编码器** 中，进行深层次的信息融合。Transformer 通过多头自注意力机制，能够捕捉图像与语言之间的复杂关系，生成包含图像与语言上下文信息的输出 token。
+OpenVLA 将动作生成建模为一个 **语言建模任务**。每个动作维度被离散化为 256 个 bin，整个动作向量（如7维）被表示为长度为 N 的离散 token 序列（每个值 ∈ [0, 255]）。这些 token 作为语言模型输出词表的一部分，自回归地逐个生成。
 
-- **输出格式**：Transformer 输出的 token 序列包含来自图像和语言的信息：
-  ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
+- **示意过程**：
+  ```text
+  输入：[图像 tokens] + [语言 tokens] + [已生成动作 token_1,...,token_i]
+  输出：[预测动作 token_{i+1}]
   ```
 
 ⑤ **动作离散化（Action Discretization）**
 
-OpenVLA 将机器人的控制动作离散化为多个 bins，每个动作维度（如位置、速度等）都被离散化为 256 个 bin，每个 bin 对应一个 token。
+每个动作维度在训练数据中通过分位数（1%-99%）范围进行均匀划分，映射为 [0, 255] 之间的 token。这样能忽略极端异常值，保证动作离散化粒度。
 
-- **token 格式**：每个动作维度被离散化为 256 个 token：
-  ```
-  [动作维度_1] → [动作 token_1, token_2, ..., token_256]
-  [动作维度_2] → [动作 token_257, token_258, ..., token_512]
+- **动作 token 表示**：
+  ```text
+  动作向量 (7D) → [token_1, ..., token_7] ∈ [0, 255]^7
   ```
 
 ⑥ **动作头（Action Head）**
 
-OpenVLA 使用多个并行的分类器（每个分类器对应一个动作维度）来预测每个动作的 token。每个分类器输出一个 256 维的概率分布，表示该动作维度的离散化控制值。最终的动作是这些 token 序列的组合。
-
-- **token 格式**：每个动作维度通过分类器输出 256 个 token：
-  ```
-  [动作 token_1, token_2, ..., token_256] + [动作 token_257, token_258, ..., token_512] → [完整的动作 token 序列]
-  ```
+OpenVLA 并未使用单独的“动作头”模块或多个分类器，而是**直接将离散动作 token 融入语言模型的词表中**，使用标准的 next-token 预测机制生成整个动作序列。每个 token 预测输出的是 32000 词表中对应 token 的概率（其中有 256 个 token 被重写为动作 token）。
 
 ⑦ **推理过程（Inference）**
 
-推理时，模型逐步生成动作 token 序列。每一步，模型根据之前生成的动作 token 和当前输入的图像与语言条件预测下一个动作 token。最终，生成的动作 token 序列将被解码为连续的动作值。
+推理时，OpenVLA 按照语言建模范式进行 **自回归生成**。模型首先接收图像与语言指令，随后逐步生成动作 token。每个 token 的预测依赖于上下文中已有的图像、语言和已生成动作 token。
 
-- **生成过程**：
+- **生成流程**：
+  ```text
+  [图像 tokens] + [语言 tokens] → 生成动作 token_1 → token_2 → ... → token_N
   ```
-  [图像 token] + [指令 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-  每一步生成一个新的动作 token，直到生成完整的动作序列。
 
 ⑧ **动作解码（Action Decoding）**
 
-生成的动作 token 序列通过解码器被转化为连续的控制信号。每个 token 会根据其对应的离散区间（由 bin 中心表示）进行解码。
+最终的动作 token 序列将被映射回连续动作空间。每个 token 表示某一离散 bin，可对应其中心值或采用查表方式重构连续控制信号。
 
 - **解码格式**：
+  ```text
+  [token_1, ..., token_7] → [Δx, Δy, Δz, Δθ, Δroll, Δpitch, grip]
   ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-  生成的 token 会映射回实际的控制信号，最终得到机器人执行的动作。
 
 
 ---
@@ -678,7 +603,7 @@ OpenVLA 使用多个并行的分类器（每个分类器对应一个动作维度
 - 架构：轻量LLaMA + 动作条件控制 + diffusion MLP decoder
 - Action Head：使用简化diffusion模型直接生成动作。
 
-![tinyvla](pic/tinyVLA.png)
+![tinyvla](pic/Tiny-VLA.png)
 
 ---
 
@@ -756,6 +681,7 @@ TinyVLA 的 **Action Head** 使用扩散模型（Diffusion Model）生成控制�
 ---
 
 ### 6. TraceVLA
+**主要思想：使用现成的点追踪算法，生成关键点的运动轨迹。这些视觉轨迹（visual traces）被叠加在机器人当前观测图像上，作为模型的可视化提示，为模型提供其历史动作的空间记忆。**
 - 架构：当前图像 + 轨迹图像（叠加） + 文本 → LLM → token动作输出
 - Action Head：与OpenVLA一致，自回归输出token。
   
@@ -839,76 +765,91 @@ TraceVLA 是一种基于视觉-语言-动作（VLA）架构的机器人控制模
 ![Octo](pic/Octo.png)
 
 ---
+
 #### Octo 模型架构详解
 
-Octo 是一个基于 Transformer 的通用机器人政策，它可以通过微调适应新环境和任务，包括不同的传感器输入和动作空间。Octo 使用了大量来自 **Open X-Embodiment 数据集**的机器人示范数据，并支持语言指令、目标图像以及机器人观测的条件推理。
+Octo 是一个基于 Transformer 的通用机器人策略模型，可以通过微调适应新的任务与机器人环境，包括不同的感知输入（如相机、语言指令）和动作空间（如末端控制、关节控制等）。Octo 使用 Open X-Embodiment 数据集中的 80 万条机器人操作轨迹进行预训练，支持以**语言指令**或**目标图像**作为任务条件，并结合机器人观察信息执行动作预测。
 
-① **任务和观测 token 化（Task and Observation Tokenization）**
+① **任务和观察 token 化（Task and Observation Tokenization）**
 
-任务定义（如语言指令 ℓ 和目标图像 g）与机器人观测 o 通过特定的 tokenizers 转换成 token：
+Octo 使用模态特定的编码器（tokenizer）将任务定义与机器人观察转化为统一格式的 token 序列：
 
-- **语言输入**：通过预训练的 T5-base 模型将语言指令 token 化，输出语言嵌入的 token 序列。
-  ``` 
+- **语言指令 ℓ**：使用预训练的 T5-base 模型（111M 参数）编码，生成语言嵌入 token 序列。
+  ```
   [语言指令] → [语言 token_1, token_2, ..., token_m]
   ```
 
-- **图像输入**：通过轻量级 CNN 提取图像特征，将图像划分为若干个 patch，并转换为 token。
-  ``` 
-  [图像] → [图像 token_1, token_2, ..., token_n]
+- **图像观察 / 目标图像 g**：通过浅层卷积网络提取图像特征，并划分为 patch 后展平成图像 token。
+  ```
+  [图像输入] → [图像 token_1, token_2, ..., token_n]
   ```
 
-这些 token 会被拼接在一起，并加入位置编码，形成输入序列：
+最终，所有 token（任务(语言) token + 观察(图像) token）会被拼接起来，并加入位置编码，构成输入序列：
 ```
-[任务 token] + [图像 token] → [输入 token_1, token_2, ..., token_k]
+[语言 token] + [图像 token] → Transformer 输入 token 序列
 ```
 
-② **Transformer Backbone**
+② **Transformer 主干网络（Backbone）**
 
-拼接后的 token 序列输入到 **Transformer** 中，Transformer 负责捕捉图像与语言之间的深层次关系。输出的 token 作为后续生成动作的基础。
+所有输入 token 被送入主干 Transformer 网络进行处理，输出每个 token 的上下文感知嵌入。Octo 采用了**块式掩码注意力结构（block-wise masked attention）**：
 
-- **输出格式**：
+- 每个观察 token 只能访问相同或更早时间步的 observation token；
+- 所有 token 均可以访问任务 token（语言或目标图像）；
+- 缺失模态（如无语言指令）将被 mask。
+
+此外，为了便于动作解码，Octo 在序列中插入一组**读取 token（readout tokens）**，类似于 BERT 的 [CLS] token，它们用于提取最终动作表示，不会反向影响原始 token。
+
+③ **动作预测模块（Action Decoding）**
+
+Octo 使用基于 **扩散建模（Diffusion）** 的动作头（action head）来预测连续、多模态的动作分布。每个读取 token 的嵌入经过动作头后输出多个连续动作（即“动作片段”chunk）：
+
+- 扩散过程从高斯噪声开始，进行 $K$ 步解噪，每一步依赖于：
+  - 当前噪声状态 $x_k$
+  - 读取 token 的嵌入 $e$
+  - 时间步索引 $k$
+
+- 动作预测过程：
   ```
-  [输入 token_1, token_2, ..., token_k] → [输出 token_1, token_2, ..., token_k]
+  x_{k-1} = α(x_k - γ · εθ(x_k, e, k)) + N(0, σ²I)
   ```
+  其中 $\epsilon_θ$ 是学习得到的解噪网络。
 
-③ **动作解码（Action Decoding）**
+这种策略比 MSE 或离散化策略更具优势，能够生成更精细、更真实的动作轨迹。
 
-Octo 使用 **动作头（Action Head）** 来预测机器人动作。动作头通过条件扩散（diffusion）过程生成动作，输出一组连续的动作值。
+④ **任务与动作空间的灵活适应性**
 
-- **扩散过程**：
-  在训练过程中，Octo 使用扩散模型来预测未来一段时间的连续动作，并通过扩散步骤（包括噪声和解噪）生成每个时间步的动作。这种方法可以生成高精度的连续动作，避免了误差的积累。
+Octo 的模块化架构允许在不重新训练主干模型的情况下，灵活添加新的：
 
-  ``` 
-  [图像 token] + [指令 token] + [历史动作 token_1, ..., token_i] → [下一个动作 token_{i+1}]
-  ```
+- 输入模态（如新的相机、传感器）；
+- 任务定义（语言或图像）；
+- 动作空间（末端控制、关节控制等）。
 
-  生成的动作 token 序列通过解码器映射到具体的控制信号。
+新模块只需添加：
+- 相应的轻量级编码器；
+- 新的头部（head）；
+- 或新的位置编码。
 
-- **输出格式**：
-  ```
-  [动作 token_1, token_2, ..., token_n] → [控制信号_1, 控制信号_2, ..., 控制信号_n]
-  ```
+这一灵活性使 Octo 可快速适配不同机器人配置。
 
-④ **灵活的任务和动作空间适应性（Flexible Task and Action Space Adaptation）**
+⑤ **训练与微调机制**
 
-Octo 在预训练时可以处理不同的任务和动作空间，并能在微调时轻松适应新的机器人设置。训练过程中，Octo 通过将任务和观测的输入 token 与动作空间输出 token 的适配性设计，支持多任务训练并生成多模态控制策略。
+Octo 使用来自 Open X-Embodiment 的 25 个数据子集（共 80 万轨迹）进行大规模预训练。
 
-⑤ **训练与微调（Training and Fine-tuning）**
+- 训练目标：扩散预测动作（DDPM 方式）；
+- 微调策略：
+  - 使用目标域约 100 条演示；
+  - 训练 50k 步；
+  - 使用全模型更新（不冻结参数）；
+  - 学习率采用余弦衰减 + linear warmup。
 
-Octo 在 **Open X-Embodiment 数据集**上预训练，并且能通过简单的微调适应新的机器人任务、环境和动作空间。在微调过程中，Octo 通过调整输入的任务和观测 token，使得模型能够适应新的机器人配置、感知输入和控制信号。
-
-- **微调过程**：
-  ```
-  [新的任务 token] + [新的观测 token] → [新动作 token_1, ..., new_action_n]
-  ```
+在微调时，只需添加新模态的 tokenizer 和输出 head，即可适配新机器人平台。
 
 ⑥ **推理过程（Inference）**
 
-在推理时，Octo 逐步生成动作 token，通过每一步生成一个新的动作 token，并将这些生成的 token 序列组合成完整的动作序列。这个过程是条件生成的，每个新的动作 token 都是基于之前生成的 token 和当前输入的图像与语言信息预测出来的。
+推理时，Octo 输入观察 token 和任务 token（语言或图像），使用 Transformer 编码后，生成读取 token 嵌入，并通过动作头的扩散过程生成完整的动作序列。
 
-⑦ **总结**
+每一个动作 chunk 是基于当前观察条件下预测生成的。
 
-Octo 是一个通用机器人政策，能够通过语言指令、目标图像和机器人观测灵活适应不同的任务和机器人配置。它利用 Transformer 架构有效融合多模态信息，并通过扩散模型生成高精度的连续动作，广泛适用于多机器人控制任务。
 
 ---
 
@@ -917,97 +858,99 @@ Octo 是一个通用机器人政策，能够通过语言指令、目标图像和
 - Action Head：使用flow-matching ODE模块生成动作（非采样）。
 
 ![π0](pic/pi0.png)
+![π0](pic/pi0-1.png)
 
 ---
-### π0 模型架构详解
 
-Pi0 是一个基于视觉-语言-动作（VLA）模型的多模态机器人控制框架，旨在通过视觉和语言输入生成高效的机器人控制动作。该模型通过 **扩散模型**（Flow Matching）进行动作生成，避免了自回归模型中的误差积累问题。以下是 Pi0 模型架构的详细解构：
+
+#### π₀ 模型架构详解
+
+π₀ 是一个基于视觉-语言-动作（VLA）的多模态机器人控制框架，旨在通过视觉和语言输入生成高效、流畅的机器人控制信号。该模型采用**条件流匹配（Conditional Flow Matching）**方法进行连续动作建模，从而有效支持高频、高精度的灵巧操作任务。以下为其架构详细分解：
+
 
 ① **图像编码器（Vision Encoder）**
 
-Pi0 使用 **Vision Transformer（ViT）** 作为图像编码器。输入的图像首先被划分为多个 patch，每个 patch 会生成一个 token，这些 tokens 会通过 ViT 模型处理，最终生成图像的特征表示。
+π₀ 使用 **Vision Transformer（ViT）** 作为图像编码器。输入图像首先被划分为多个 patch，并转换为一系列视觉 token，表示图像的局部区域。每个 token 被映射到与语言 token 相同的嵌入空间。
 
-- **输入格式**：图像通过 ViT 转换为图像 tokens：
+- 输入格式：
   ```
-  [图像] → [图像 token_1, token_2, ..., token_n]
-  ```
-  每个 token 代表图像的一个局部区域（patch）。
-
-② **语言编码器（Text Encoder）**
-
-Pi0 使用 **PaliGemma** 作为语言模型（LLM）对语言指令进行编码。PaliGemma 是一个大规模预训练的语言模型，能够将自然语言指令转换为一个固定长度的语义向量，表达语言指令的语义信息。
-
-- **输入格式**：语言指令经过 PaliGemma 编码为 token 序列：
-  ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-  每个 token 表示语言中的一个单词或子词。
-
-③ **特征融合（Feature Fusion）**
-
-图像 token 和语言 token 被拼接成一个联合序列，并通过位置编码标记其来源（图像或语言）。此步骤帮助 Transformer 理解每个 token 的类型和来源。
-
-- **token 格式**：图像 token 和语言 token 被拼接后，生成联合 token 序列：
-  ```
-  [图像 token_1, token_2, ..., token_n] + [语言 token_1, token_2, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
-  ```
-
-④ **多层 Transformer 编码器（Transformer Encoder）**
-
-拼接后的图像和语言 tokens 被输入到 **多层 Transformer 编码器** 中。Transformer 通过多头自注意力机制，能够捕捉图像和语言之间的复杂关系，生成深度融合的特征表示。
-
-- **输出格式**：Transformer 输出的 token 序列包含了图像和语言信息的融合：
-  ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
-  ```
-
-⑤ **动作离散化（Action Discretization）**
-
-Pi0 将机器人控制动作离散化为多个 bins，每个动作维度（如位置或旋转角度）都被离散化为 256 个 bins，每个 bin 对应一个 token。
-
-- **token 格式**：每个动作维度通过分类器输出 256 个 token：
-  ```
-  [动作维度_1] → [动作 token_1, token_2, ..., token_256]
-  [动作维度_2] → [动作 token_257, token_258, ..., token_512]
-  ```
-
-⑥ **动作头（Action Head）**
-
-Pi0 的 **Action Head** 使用 **Flow Matching Expert** 来生成机器人控制动作。通过 **扩散过程**（ODE），Flow Matching Expert 逐步去噪并恢复动作的控制值。与传统自回归方法不同，Pi0 通过去噪过程生成连续动作，避免了误差积累问题。
-
-- **生成过程**：每个动作维度的离散 token 序列通过 Flow Matching 技术进行去噪，最终生成连续的控制信号。
-  ```
-  [图像 token] + [指令 token] + [历史动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-
-- **输出格式**：生成的动作 token 序列会被解码为实际控制信号：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-
-⑦ **推理过程（Inference）**
-
-在推理过程中，Pi0 模型会逐步生成动作 token。每一步，模型根据之前生成的动作 token 和当前的图像与语言输入预测下一个动作 token，直到完成整个动作序列。
-
-- **生成过程**：
-  ```
-  [图像 token] + [指令 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-  每一步生成一个新的动作 token，直到生成完整的动作序列。
-
-⑧ **动作解码（Action Decoding）**
-
-生成的动作 token 序列通过解码器转化为连续的控制信号。每个 token 会根据其对应的离散区间（由 bin 中心表示）进行解码，最终得到连续的机器人控制信号。
-
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
+  [图像] → [图像 token_1, ..., token_n]
   ```
 
 
-⑨ **总结**
+② **语言编码器（Language Encoder）**
 
-Pi0 通过图像和语言的多模态信息输入，使用 **Transformer** 进行有效的特征融合。它将机器人控制动作离散化为 token，并通过 **Flow Matching Expert** 逐步去噪生成高精度的连续控制信号。与传统的自回归模型不同，Pi0 在生成过程中避免了误差积累，并能够生成更稳定、精确的动作。
+π₀ 使用 **PaliGemma**（一个 30 亿参数的视觉-语言模型）作为语言编码器，将自然语言指令转化为一系列语义 token。其语言表示与视觉表示在同一空间中进行对齐。
+
+- 输入格式：
+  ```
+  [语言指令] → [指令 token_1, ..., token_m]
+  ```
+
+
+③ **特征融合与 Transformer 主干**
+
+图像和语言 token 经嵌入后输入至多层 Transformer 编码器中。该编码器使用多头注意力机制对图像和语言信息进行深度融合，从而获得任务语义和视觉上下文之间的联系。
+
+- 输入：
+  ```
+  [图像 token_1, ..., token_n, 指令 token_1, ..., token_m]
+  ```
+- 输出：
+  ```
+  [融合 token_1, ..., token_{n+m}]
+  ```
+
+
+
+④ **动作专家（Action Expert(Head)）**
+
+π₀ 使用专门的 **动作专家模块（Action Expert）** 来处理机器人状态（如关节角度）并生成连续的动作向量。该模块与主干 Transformer 分离，使用独立权重，具备更强的专用建模能力。内部使用的是Floww Matching方式。
+
+
+
+⑤ **动作建模与 Flow Matching**
+
+π₀ 不进行动作离散化，而是使用 **条件流匹配（Conditional Flow Matching）** 来建模**连续的动作块分布**。每个动作块 \( A_t = [a_t, ..., a_{t+H-1}] \) 包含未来 H 步的动作（如 H=50），训练目标是学习一个向量场用于“去噪”。
+
+- 加噪样本：
+  \[
+  A_t^\tau = \tau A_t + (1 - \tau)\epsilon,\quad \epsilon \sim \mathcal{N}(0, I)
+  \]
+- 训练损失：
+  \[
+  L_\tau = \mathbb{E} \| v_\theta(A_t^\tau, o_t) - u(A_t^\tau | A_t) \|^2
+  \]
+
+
+
+⑥ **推理过程（Inference）**
+
+在推理时，π₀ 从标准高斯噪声 \( A_0 \sim \mathcal{N}(0, I) \) 开始，使用欧拉积分法(Euler Integration)对向量场进行迭代，逐步还原真实动作：
+
+- 推理步骤：
+  \[
+  A_t^{\tau+\delta} = A_t^\tau + \delta \cdot v_\theta(A_t^\tau, o_t)
+  \]
+
+整个过程并非自回归，不依赖历史动作生成未来动作，因此具有更好的稳定性和并行性。
+
+
+
+⑦ **输出动作信号（Action Output）**
+
+最终生成的动作块是一个长度为 H 的连续动作序列，每一步都是一个浮点向量，表示机器人控制信号（如位置、速度或关节角度）。无需再进行 token 解码或 bin 映射。
+
+- 输出格式：
+  ```
+  [动作向量_1, 动作向量_2, ..., 动作向量_H]
+  ```
+
+
+
+⑧ **总结**
+
+π₀ 通过将图像与语言融合，并结合条件流匹配建模连续动作块，实现了对多阶段、高复杂度任务的精准控制。与传统自回归动作模型相比，π₀ 避免了 token 累积误差，具备更高的稳定性、泛化性与执行效率，是构建通用机器人基础模型的重要尝试。
 
 --- 
 
@@ -1018,78 +961,102 @@ Pi0 通过图像和语言的多模态信息输入，使用 **Transformer** 进�
 ![cogact](pic/CogACT.png)
 
 ---
-### CogACT 模型架构详解
 
-CogACT 是一个基于视觉、语言和动作的联合模型，结合了自回归和扩散模型的特点，用于高效的机器人控制任务。以下是 CogACT 的详细模型架构解构：
+#### CogACT 模型架构详解
+
+CogACT 是一个基于视觉、语言和动作的联合模型，采用**组件化结构**，将认知与动作建模进行解耦，结合大型语言模型和扩散模型的优势，用于高效的机器人控制任务。以下是 CogACT 的详细模型架构解构：
+
+---
 
 ① **图像编码器（Vision Encoder）**
 
-CogACT 使用 **SigLIP** 编码器来处理输入的图像。图像通过 SigLIP 编码器提取密集的视觉特征，这些特征会被后续的 Transformer 模型用于生成机器人控制动作。
+CogACT 使用 **DINOv2** 与 **SigLIP** 两种预训练图像编码器联合处理输入图像。DINOv2 主要提供高层语义理解，SigLIP 捕捉空间细节信息。它们提取的特征图会在通道维度上进行拼接，并经过线性投影层映射为统一的视觉 token 表示。
 
-- **输入格式**：图像通过 SigLIP 编码器转换为图像特征 tokens：
+- **输入格式**：图像通过双编码器转换为融合特征 tokens：
   ```
-  [图像] → [图像 token_1, token_2, ..., token_n]
+  [图像] → DINOv2、SigLIP → 拼接 → 视觉 token_1, ..., token_n
   ```
-  每个 token 代表图像的一个局部区域（patch）表示。
+  每个 token 表示图像局部区域的语义与空间特征组合。
+
+---
 
 ② **语言编码器（Text Encoder）**
 
-语言指令使用 **Qwen2-VL**，即一个先进的视觉-语言模型（VLM）进行编码。该模型能够将自然语言指令转换为一个固定长度的语义向量，表达语言指令的深层次语义。
+CogACT 并未采用 Qwen2-VL，而是使用了 **LLAMA-2** 作为语言模块。语言输入经过 tokenizer 编码为 token 序列后，与视觉 tokens 和一个可学习的认知 token（cognition token）共同输入 LLAMA-2 的因果注意力结构中。LLAMA-2 处理后，仅保留 cognition token 的输出，作为“认知特征”用于后续动作预测。
 
-- **输入格式**：语言指令通过 Qwen2-VL 编码为 token 序列：
+- **输入格式**：
   ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-  每个 token 表示语言中的一个单词或子词。
-
-③ **特征融合与位置编码（Feature Fusion and Positional Encoding）**
-
-图像特征 tokens 和语言指令 tokens 被拼接成一个联合的序列，并通过位置编码（Positional Encoding）标记每个 token 的类型和来源。通过这种方式，Transformer 可以理解每个 token 来自于视觉输入还是语言输入。
-
-- **token 格式**：图像 tokens 和语言 tokens 被拼接成联合序列，包含图像和语言的信息：
-  ```
-  [图像 token_1, token_2, ..., token_n] + [语言 token_1, token_2, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
+  [语言指令] → LLAMA-2 tokenizer → 指令 token_1, ..., token_m
   ```
 
-④ **多层 Transformer 编码器（Transformer Encoder）**
-
-图像和语言 tokens 被输入到 **Transformer 编码器** 中。Transformer 通过多头自注意力机制，在视觉信息和语言信息之间进行复杂的交互，从而生成一个融合的 token 序列，包含来自两个模态的上下文信息。
-
-- **输出格式**：Transformer 生成的输出 token 序列包含了图像和语言信息的融合：
+- **融合方式**：
   ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
-  ```
-
-⑤ **动作解码器（Action Decoder/ Action Head）**
-
-CogACT 的核心是动作解码器，它采用了 **扩散模型**（Diffusion Model），通过逐步去噪来恢复机器人控制动作。解码器首先生成一系列 token，然后将这些 token 作为条件输入到扩散模型中，通过扩散过程逐步生成控制动作。
-
-- **输入格式**：动作解码器的输入是图像特征和语言特征的融合 token，以及生成的初始动作 token：
-  ```
-  [图像 token] + [指令 token] → [动作 token_1, token_2, ..., token_k]
-  ```
-
-⑥ **推理过程（Inference Process）**
-
-在推理过程中，CogACT 会逐步生成动作 token 序列。每一步，模型根据当前输入的图像和语言信息以及之前生成的动作 token 来预测下一个动作 token。最终，所有生成的动作 token 将被解码为实际的机器人控制信号。
-
-- **生成过程**：
-  ```
-  [图像 token] + [指令 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-  每一步生成一个新的动作 token，直到生成完整的动作序列。
-
-⑦ **动作解码（Action Decoding）**
-
-生成的动作 token 序列通过解码器被转化为连续的控制信号。每个 token 会映射到一个离散区间（由 token 编号和 bin 中心表示），从而得到连续的控制动作。
-
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
+  [视觉 token_1,...,token_n] + [语言 token_1,...,token_m] + [认知 token c] → LLAMA-2 → 输出 cognition feature f_c
   ```
 
 ---
 
+③ **特征融合与位置编码（Feature Fusion and Positional Encoding）**
+
+图像特征和语言 token 在拼接后输入 LLAMA-2 模型，其位置编码通过**原始 LLAMA-2 的机制**完成，不仅表示 token 的位置，还包括 token 的来源（视觉/语言）。最终模型仅使用认知 token 的输出结果作为认知语义向量，不保留其他 token 的输出。
+
+- **token 序列结构**：
+  ```
+  [视觉 tokens] + [语言 tokens] + [认知 token] → LLAMA-2 → 仅输出 f_c
+  ```
+
+---
+
+④ **多层 Transformer 编码器（LLAMA-2 Causal Attention）**
+
+本模块实为 LLAMA-2 模型，具备多层 Transformer 的结构。它利用因果注意力机制对输入的联合序列（视觉+语言+认知）进行推理，认知 token 最终承载融合后的语义输出，用于指导动作模块。
+
+- **输出格式**：
+  ```
+  [联合 token_1, ..., token_(n+m+1)] → LLAMA-2 → 只提取认知 token 的输出 → cognition feature f_c
+  ```
+
+---
+
+⑤ **动作解码器（Action Head / Diffusion Action Module）**
+
+CogACT 并不使用离散 token 或自回归结构，而是引入了 **Diffusion Transformer（DiT）** 作为动作模块，对连续动作序列进行建模。该模块以 cognition feature 为条件输入，通过多步去噪过程，从加噪后的动作序列中恢复出高质量的动作轨迹。
+
+- **输入格式**：
+  ```
+  输入：认知特征 f_c， 加噪动作序列 [a_t^i, a_{t+1}^i, ..., a_{t+N}^i], 第 i 步去噪 step 信息
+  输出：动作序列 [a_t, a_{t+1}, ..., a_{t+N}]
+  ```
+
+- **注意事项**：
+  - 动作是 7 维向量（位置、姿态、夹爪）
+  - 模型一次性预测当前及未来 15 步动作（N = 15）
+  - 生成的是**连续值**，不是 token，也不使用 bin 编码
+
+---
+
+⑥ **推理过程（Inference Process）**
+
+在推理阶段，CogACT 会对每一帧进行动作生成，并采用一种 **自适应动作集成策略（Adaptive Action Ensemble）**，将当前帧预测结果与过去若干帧的结果进行加权组合。不同于简单平均或固定窗口平均，CogACT 使用**余弦相似度**来计算历史预测的权重，以增强动作序列的平滑性和一致性。
+
+- **生成流程**：
+  ```
+  当前视觉输入 + 语言指令 + 过去预测历史 → DiT → 预测动作序列
+  → 与历史动作进行余弦加权 → 输出最终动作 â_t
+  ```
+
+---
+
+⑦ **动作解码（Action Decoding）**
+
+生成的动作序列无需离散 token 解码，而是直接作为**连续控制信号**应用于机器人控制器。每个输出动作为一个 7D 向量，无需 bin 解码、量化或映射到预定义 token 表。
+
+- **输出格式**：
+  ```
+  [a_t, a_{t+1}, ..., a_{t+N}] ∈ ℝ^7 → 直接映射为控制指令
+  ```
+
+---
 
 
 ### 10. Diffusion-VLA
@@ -1099,81 +1066,79 @@ CogACT 的核心是动作解码器，它采用了 **扩散模型**（Diffusion M
 ![diffusion-vla](pic/Diffusion-VLA.png)
 
 ---
-### Diffusion-VLA (DiVLA) 模型架构详解
 
-Diffusion-VLA (DiVLA) 是一个将自回归模型与扩散模型相结合的多模态机器人控制框架。其核心思想是将自回归模型用于推理任务，而扩散模型用于控制机器人动作的生成。该方法能够在任务推理过程中提供强大的语言推理能力，同时保持动作生成的鲁棒性。
+#### Diffusion-VLA (DiVLA) 模型架构详解
+
+Diffusion-VLA (DiVLA) 是一个将**自回归语言推理能力**与**扩散动作生成机制**有机结合的多模态机器人控制框架。其设计初衷是保留语言模型的推理优势，同时利用扩散模型提升动作生成的鲁棒性与多样性，最终形成一个高效、通用且易扩展的机器人基础模型架构。
+
 
 ① **图像编码器（Vision Encoder）**
 
-图像输入首先经过 **SigLIP**（一种视觉编码网络）进行编码，产生紧凑的视觉特征。这些特征随后通过 Transformer 模型进一步处理，生成一系列视觉 token。
+DiVLA 使用 **SigLIP** 对图像进行编码，提取紧凑且具有语义表达的视觉特征。由于机器人常配有多个视角的摄像头，SigLIP 被共享用于每个视角，生成的 token 会被拼接起来形成联合视觉表示。
 
-- **输入格式**：图像通过 SigLIP 和 Transformer 转换为视觉 tokens：
+- **输入格式**：
+  ```text
+  [图像_1, 图像_2, ..., 图像_n] → SigLIP → [视觉 token_1, ..., token_p]
   ```
-  [图像] → [视觉 token_1, token_2, ..., token_n]
-  ```
+
 
 ② **语言编码器（Text Encoder）**
 
-DiVLA 使用预训练的 **Qwen2-VL** 语言-视觉模型对语言指令进行编码。该模型将自然语言指令转化为语义丰富的固定长度向量。
+文本输入通过预训练的 **Qwen2-VL**（一种多模态大模型）进行编码。Qwen2-VL 能够处理图像和文本输入，但在本架构中主要承担对语言指令的理解与语义嵌入功能。
 
-- **输入格式**：语言指令被转化为 token 序列：
-  ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-
-③ **特征融合与位置编码**
-
-图像 tokens 和语言 tokens 被拼接成一个联合序列，并通过位置编码和 token 类型标记区分图像和语言部分。这样 Transformer 能够理解两种模态的关系，并将其融合。
-
-- **token 格式**：图像和语言 token 被拼接成一个联合序列：
-  ```
-  [图像 token_1, token_2, ..., token_n] + [指令 token_1, token_2, ..., token_m] → [联合 token_1, token_2, ..., token_(n+m)]
+- **输入格式**：
+  ```text
+  [语言指令] → Qwen2-VL → [语言 token_1, ..., token_q]
   ```
 
-④ **多层 Transformer 编码器**
 
-拼接后的图像和语言 tokens 被送入多层 **Transformer 编码器**。Transformer 的多头自注意力机制能够捕捉图像与语言之间的复杂关系，生成的输出 token 融合了两种模态的信息。
+③ **动作解码器（Latent Diffusion-based Action Decoder / Action Head）**
 
-- **输出格式**：Transformer 输出的联合 token 序列包括图像和语言的上下文信息：
-  ```
-  [联合 token_1, token_2, ..., token_(n+m)] → [输出 token_1, token_2, ..., token_(n+m)]
-  ```
+不同于将动作离散化成 token 的自回归方法，DiVLA 使用一个 [**Latent Diffusion Model**](#sectionLatent) 来生成连续控制信号。语言与视觉特征作为条件信息送入扩散模型，指导其生成高质量动作序列。
 
-⑤ **动作解码器（Action Decoder）**
+- **结构细节**：
+  - 使用 LLM 输出的 reasoning 结果作为条件；
+  - 扩散模型随机初始化（不是预训练）；
+  - 最后通过一个 **MLP** 层将解码结果映射为机器人的关节空间控制向量；
+  - 对于不同机器人形态（embodiment），只需替换 MLP 层即可。
 
-DiVLA 使用一个 **扩散模型** 进行动作的生成。扩散模型通过噪声去噪过程逐步生成动作，从而将视觉和语言信息转化为控制信号。具体而言，模型根据生成的 token 来控制机器人的每个动作。
 
-- **动作生成过程**：生成的 token 经过扩散模型的处理后，被转化为连续的动作信号：
-  ```
-  [视觉 token] + [语言 token] + [动作 token_1, token_2, ..., token_k] → [动作输出]
-  ```
+④ **推理注入模块（Reasoning Injection Module）**
 
-⑥ **推理与推断过程（Inference）**
+该模块是 DiVLA 的关键创新之一。它不会像链式思维那样递归地将推理结果再输入模型，而是通过一种高效的方式直接将推理嵌入策略网络中。
 
-推理时，DiVLA 通过语言和视觉输入预测动作 token，利用扩散模型控制动作的生成。每一步，模型基于当前的图像、语言和之前生成的动作 token 来预测下一个动作 token，直到生成完整的动作序列。
+- **方法细节**：
+  - 提取 LLM 的推理 token embedding；
+  - 通过 **FiLM（Feature-wise Linear Modulation）** 注入策略网络中；
+  - 保持策略网络专注于动作生成，同时以辅助方式接收推理增强信号。
 
-- **推理过程**：
-  ```
-  [图像 token] + [语言 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
 
-⑦ **动作解码（Action Decoding）**
+⑤ **视角自适应 Token 化（View-Adaptive Tokenization）**
 
-生成的动作 token 序列经过解码器还原为连续的控制信号，每个 token 会根据对应的离散区间（由 bin 中心表示）进行解码，最终生成机器人执行的动作。
+为提升效率，DiVLA 针对手腕摄像头的 token 数进行显著压缩（如从上百个压缩到 16 个），而保留外部视角的高分辨率信息。
 
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
+- **目的**：降低多视角输入在 Transformer 中的计算复杂度，同时保留动作关键部位的识别能力。
 
-⑧ **推理增强模块（Reasoning Injection Module）**
 
-为了增强模型的推理能力，DiVLA 引入了推理注入模块。该模块将推理过程的输出嵌入到动作生成的政策网络中，通过 **FiLM**（Feature-wise Linear Modulation）直接调节政策网络的层，从而在生成动作时有效地使用推理信息。
+⑥ **训练目标（Loss Function）**
 
-- **推理注入格式**：
-  ```
-  [推理输出] → [推理增强后的动作输出]
-  ```
+模型的训练目标结合了扩散损失与自回归损失：
+
+\[
+\mathcal{L} = \mathcal{L}_{\text{diffusion}} + \alpha \cdot \mathcal{L}_{\text{NTP}}
+\]
+
+其中：
+- \( \mathcal{L}_{\text{diffusion}} \)：扩散模型的动作生成损失；
+- \( \mathcal{L}_{\text{NTP}} \)：语言模型中的下一个 token 预测损失；
+- \( \alpha \)：权重系数，实测中两项损失数量级相差较大，默认设置为 \( \alpha = 1 \)。
+
+
+
+⑦ **预训练数据处理**
+
+使用 **Droid** 数据集预训练 DiVLA-2B/7B，使用 **Droid + OXE** 训练 DiVLA-72B。为增强语言推理能力，作者还使用 GPT-4o 自动补全原始数据中的推理短语，使得训练数据同时具备语言、视觉与推理三重信息。
+
 
 
 
@@ -1186,7 +1151,7 @@ DiVLA 使用一个 **扩散模型** 进行动作的生成。扩散模型通过�
 ![FAST](pic/FAST.png)
 
 ---
-### FAST 模型架构详解
+### FAST 模型方法详解
 
 FAST 是一种高效的动作 token 压缩方案，专为提升 **自回归型 Vision-Language-Action (VLA)** 模型在高频机器人控制任务中的表现。它通过离散余弦变换（DCT）与 Byte Pair Encoding（BPE）联合实现对动作序列的高效压缩，显著减少 token 数量并提升训练效率。以下是 FAST 模型的详细架构分解：
 
@@ -1286,215 +1251,115 @@ FAST 显著减少了每段动作的 token 数量（如原始700个token压缩为
 
 ![spatialvla](pic/Spatial-VLA.png)
 
+- 提出了一种面向机器人基础模型的新型通用策略SpatialVLA，探索三维空间感知表示；
+
+- 设计了 Ego3D位置编码 与 自适应动作网格 两个关键模块，有效注入三维空间意识。
+
 ---
 
-### SpatialVLA 模型架构详解
+#### SpatialVLA 模型架构详解
 
-SpatialVLA 是一个多模态机器人控制模型，专注于增强空间感知能力和推理效率。其核心在于 **自适应空间动作网格（Adaptive Spatial Action Grids）**，通过对动作进行高斯建模和离散化，使得模型可以在复杂环境下高效地生成机器人控制动作。以下是 SpatialVLA 模型架构的详细解构：
+**SpatialVLA** 是一个面向通用机器人策略的多模态视觉-语言-动作模型，专注于引入三维空间感知能力以提升复杂任务中的泛化与适应效率。其核心机制包括 **Ego3D 位置编码（Ego3D Position Encoding）** 和 **自适应空间动作网格（Adaptive Spatial Action Grids）**，分别用于构建空间感知输入和离散化输出动作的空间表达。
+
+以下是模型架构的详细组件解析：
+
+
 
 ① **图像编码器（Vision Encoder）**
 
-SpatialVLA 使用 **SigLIP** 作为视觉编码器，将输入的图像转换为一系列视觉特征。图像通过该编码器提取空间特征，帮助模型理解环境中物体的位置和姿态。SigLIP 提供了强大的空间感知能力，使得模型能够在 3D 空间中进行有效的控制。
+SpatialVLA 使用预训练的 **SigLIP** 编码器提取图像的二维语义特征。该编码器接收机器人视角下的图像输入，并生成 token 化的视觉特征，作为后续空间编码与动作预测的基础。
 
-- **输入格式**：图像通过 SigLIP 编码为视觉特征 token：
+- 输入输出格式：
   ```
-  [图像] → [图像 token_1, token_2, ..., token_n]
+  [图像] → SigLIP → [2D 视觉特征 X ∈ ℝ^{d×h×w}]
   ```
+
+
 
 ② **Ego3D 位置编码（Ego3D Position Encoding）**
 
-SpatialVLA 使用 **Ego3D 坐标编码**，该编码帮助模型将空间信息与图像特征和动作信息结合。Ego3D 通过对输入的深度信息进行处理，为模型构建一个以机器人为中心的 3D 坐标系，从而增强了空间感知能力。
+为建模三维空间结构，SpatialVLA 使用 ZoeDepth 估计图像深度图 \(D\)，并通过相机内参执行反投影，获得每个像素点的三维位置 \(P = (x, y, z)\)，构建以机器人为中心的 3D 坐标系。接着，这些坐标通过正弦函数编码 \(γ(P)\) 并送入可学习的 MLP，得到空间位置嵌入。
 
-- **输入格式**：图像特征与深度信息一起被编码为空间 token：
-  ```
-  [图像特征] + [深度信息] → [空间 token_1, token_2, ..., token_m]
-  ```
+- 最终空间感知表示为：
+  \[
+  O_{3d} = X + \text{MLP}(γ(P))
+  \]
+
+
 
 ③ **语言编码器（Text Encoder）**
 
-SpatialVLA 使用 **PaliGemma** 语言模型（如 PaLM-E）将语言指令转化为固定长度的语义向量。该模型能够理解复杂的语言指令，并将其转化为 token 序列，供后续的动作生成使用。
+任务指令由预训练的 **PaliGemma2（类似 PaLI-X）** 模型进行编码，输出自然语言的 token 表示，捕捉语义意图，用于指导动作决策。
 
-- **输入格式**：语言指令通过 PaliGemma 编码为 token 序列：
+- 输入输出格式：
   ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-
-④ **特征融合与位置编码**
-
-将图像、深度信息和语言信息结合，形成一个联合输入序列。为了帮助 Transformer 理解不同类型的 token，SpatialVLA 会添加位置编码或 token 类型标记，确保图像、语言和空间信息能够在后续的 Transformer 编码器中得到正确处理。
-
-- **token 格式**：图像、语言和空间信息 token 被拼接成联合序列：
-  ```
-  [图像 token_1, ..., token_n] + [语言 token_1, ..., token_m] + [空间 token_1, ..., token_k] → [联合 token_1, token_2, ..., token_(n+m+k)]
+  [自然语言指令 L] → [指令 token 序列]
   ```
 
-⑤ **多层 Transformer 编码器（Transformer Encoder）**
 
-联合 token 序列被输入到 **Transformer 编码器** 中。Transformer 使用多头自注意力机制来捕捉图像、语言和空间信息之间的复杂关系，生成融合后的特征表示。这些特征将作为机器人控制动作的条件输入。
 
-- **输出格式**：Transformer 输出的 token 包含了图像、语言和空间的融合信息：
+④ **多模态特征融合**
+
+图像空间特征 \(O_{3d}\)、语言 token 以及（历史）动作 token 被拼接为一个统一的多模态 token 序列。为了区分各类 token，模型添加了 token 类型标识与位置编码。
+
+- 输入序列格式如下：
   ```
-  [联合 token_1, token_2, ..., token_(n+m+k)] → [输出 token_1, token_2, ..., token_(n+m+k)]
+  [语言 token] + [视觉 token] + [历史动作 token] → [联合 token 序列]
   ```
+
+
+⑤ **Transformer 编码器**
+
+上述多模态 token 序列被送入多层 **Transformer 编码器**，利用多头自注意力机制学习图像、语言和动作之间的跨模态关联，为动作生成提供上下文融合表示。
+
+- 输出为增强后的 token 表征，用于后续的动作 token 预测。
+
 
 ⑥ **自适应空间动作网格（Adaptive Spatial Action Grids）**
 
-SpatialVLA 使用 **自适应空间动作网格** 将机器人连续动作（如平移、旋转和抓取）离散化为 token。每个动作维度（例如位置、旋转角度、抓取状态）都会通过高斯建模和离散化，生成相应的 token。
+为了将机器人连续动作转化为可学习的离散表示，SpatialVLA 将动作空间拆分并编码为 token：
 
-- **动作维度**：模型将每个动作维度的连续值（例如位移、旋转等）离散化为多个区间，每个区间对应一个 token：
-  ```
-  [平移动作] → [平移 token_1, token_2, ..., token_M]
-  [旋转动作] → [旋转 token_1, token_2, ..., token_M]
-  [抓取动作] → [抓取 token_1, token_2]
-  ```
+- **动作拆分方式**：
+  - 平移动作 \(a_{\text{trans}} = (x, y, z)\) → 极坐标 \((ϕ, θ, r)\)
+  - 旋转动作 \(a_{\text{rot}} = (roll, pitch, yaw)\)
+  - 抓取动作 \(a_{\text{grip}} = grip\)
 
-- 通过 **高斯分布拟合**，每个动作维度（如位置、旋转和夹爪）都被划分为多个离散区间，使得模型能够根据不同的动作分布生成合适的 token。
+- **网格构建方式**：
+  - 对每个维度进行高斯分布拟合；
+  - 使用等概率划分（非等距）将每个维度切分为 M 个区间；
+  - 每个区间作为一个离散 token 类别。
 
-⑦ **动作头（Action Head）**
-
-**Action Head** 使用 **自适应空间动作网格** 来生成控制动作。每个动作维度的离散 token 序列被送入模型，最终通过 **网格索引** 反推出对应的连续动作值。
-
-- **生成过程**：
-  1. 将动作 \((\Delta T, \Delta R, G)\) 转换为 token ID，作为训练目标。
-  2. 在推理时，模型输出 3 个 token：平移 token、旋转 token 和抓取 token。
-  3. 使用网格索引反推得到连续的动作向量。
-
-- **损失函数**：训练时，采用标准的交叉熵损失计算：
+- **Token 嵌入**：
   \[
-  \mathcal{L} = \mathbb{E}_{p(A_t|o_t)} [\text{CrossEntropy}(a_t, \tilde{a}_t)]
+  E_a = \{E_{\text{trans}}, E_{\text{rot}}, E_{\text{grip}}\}
+  \]
+  - 其中 \(E_{\text{trans}} ∈ ℝ^{d×M_{\text{trans}}}\)、\(E_{\text{rot}} ∈ ℝ^{d×M_{\text{rot}}}\)、\(E_{\text{grip}} ∈ ℝ^{d×2}\)
+
+- 最终总的 token 数为 \(V = M_{\text{trans}} + M_{\text{rot}} + 2\)
+
+
+
+⑦ **动作预测与反离散化（Action Token Prediction and Decoding）**
+
+- **训练阶段**：模型以 token 分类形式预测三个动作 token：平移 token、旋转 token 和抓取 token。
+- **损失函数**：
+  \[
+  \mathcal{L} = \mathbb{E}_{p(A_t|o_t)} \text{CrossEntropy}(a_t, \tilde{a}_t)
   \]
 
-⑧ **推理与解码（Inference and Decoding）**
+- **推理阶段**：
+  1. 模型输出 3 个 token（对应平移、旋转、抓取）；
+  2. 每个 token 被映射回其所属网格的中心值；
+  3. 拼接生成最终连续动作向量用于控制机器人。
 
-推理时，模型逐步生成动作 token 序列。每一步生成一个新的动作 token，并将这些 token 通过 **网格索引** 还原为连续的动作向量。
+SpatialVLA 并没有独立的Action Head，而是将动作拆分并编码为离散 token，再通过 Transformer 编码器进行建模。
 
-- **生成过程**：
-  ```
-  [图像 token] + [语言 token] + [动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
 
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
+⑧ **推理效率**
+
+与 RT-1/RT-2/TraceVLA 等模型相比，SpatialVLA **每步仅预测 3 个 token**（而非 7 个），因此显著提升了推理速度（论文中报告为 20Hz@4090 GPU），同时保留了对高维动作的建模能力。
 
 ---
-
-
-
-
-### 13. RDT-1B(双臂机器人)
-- 架构：图像（多视角） + LLM指令嵌入 + DiT + Alternating Injection → latent diffusion
-- Action Head：MLP + latent diffusion chunk解码器（高频控制）。
-  
-![RDT-1B](pic/RDT-1B.png)
-
----
-### RDT-1B 模型架构详解
-
-RDT-1B 是一款结合了 **扩散建模（Diffusion Modeling）** 和 **MLP 解码器** 的高精度机器人控制模型，专为多模态任务、特别是双臂精细操作任务设计。其独特之处在于使用扩散过程生成控制信号，从而避免了自回归模型中的误差积累问题。
-
-① **图像输入（Image Input）**
-
-RDT-1B 接收三路图像：正面图像、左腕图像和右腕图像，这些图像通过 **SigLIP 编码器** 提取视觉特征。图像经过编码后转化为 token，作为后续操作的基础。
-
-- **输入格式**：图像通过 **SigLIP 编码器** 转换为视觉 tokens：
-  ```
-  [图像_正面] → [视觉 token_1, token_2, ..., token_n]
-  [图像_左腕] → [视觉 token_1, token_2, ..., token_m]
-  [图像_右腕] → [视觉 token_1, token_2, ..., token_p]
-  ```
-
-② **语言输入（Text Input）**
-
-RDT-1B 使用 **T5-XXL 编码器** 将语言指令转换为语义向量。该语言模型将输入的自然语言指令转化为一个固定长度的 token 序列，作为机器人行为的条件输入。
-
-- **输入格式**：语言指令通过 **T5-XXL 编码器** 转换为 token 序列：
-  ```
-  [语言指令] → [指令 token_1, token_2, ..., token_m]
-  ```
-
-③ **低维输入（Low-dimensional Inputs）**
-
-除了图像和语言输入外，RDT-1B 还接收低维输入数据，主要包括机器人自身的状态信息（如 proprioception）、控制频率和扩散时间步等。这些输入用于提供机器人当前的物理状态，并帮助生成控制动作。
-
-- **输入格式**：
-  ```
-  [身体状态] + [控制频率] + [扩散时间步] → [低维控制输入 token]
-  ```
-
-④ **扩散建模过程（Diffusion Modeling Process）**
-
-RDT-1B 使用 **扩散建模**（Diffusion Model）来生成连续控制信号。扩散过程包括 **前向过程**（向动作序列添加噪声）和 **反向去噪过程**（训练时的目标）。
-
-1. **前向过程（Forward Process）**：向动作序列添加噪声：
-   \[
-   \tilde{a}_t = \sqrt{\bar{\alpha}_k} a_t + \sqrt{1 - \bar{\alpha}_k} \epsilon
-   \]
-   
-2. **反向去噪（Training Objective）**：
-   \[
-   \mathcal{L}(\theta) = \mathbb{E}\left[ \left\| a_t - f_\theta(\ell, o_t, \tilde{a}_t, k) \right\|^2 \right]
-   \]
-   训练的目标是最小化噪声去除误差。
-
-3. **推理阶段（Inference Phase）**：从高斯噪声开始，模型通过多步反向去噪生成动作块（action chunk）。
-
-⑤ **模型结构（fθ）**
-
-RDT-1B 的核心结构是一个 **28 层 Transformer（DiT架构）**，支持图像、语言和动作的多模态交叉注意力（cross-attention）。该结构包括以下关键设计：
-
-- **MLP 解码器（MLP Decoder）**：用于非线性映射，增强模型对复杂物理控制任务的拟合能力。
-- **QKNorm + RMSNorm**：解决高频物理量的数值稳定性问题。
-- **交替条件注入（Alternating Condition Injection，ACI）**：交替注入图像和语言 tokens，防止注意力偏置。
-
-⑥ **训练与推理流程（Training and Inference Process）**
-
-#### **训练过程**：
-- 使用 **DDPM**（Denoising Diffusion Probabilistic Models）训练动作生成模块。
-- 使用 **MSE loss** 监督去噪网络训练。
-- 图像通过 **SigLIP 编码器**（冻结）进行处理，语言通过 **T5-XXL 编码器**（冻结）进行处理，低维量通过 **带 Fourier 特征的 MLP** 进行编码。
-
-#### **推理过程**：
-- 输入图像 + 指令 → 编码后条件。
-- 从高斯噪声采样潜在动作，经过 5 步反向扩散生成完整的动作块（action chunk）。
-- 控制频率可达到 **381Hz**，能够每秒生成多个动作序列。
-
-⑦ **Action Head：扩散建模 + MLP 解码器**
-
-**Action Head** 使用 **扩散模型**（Diffusion Model）生成动作序列。与传统自回归模型不同，RDT-1B 采用 **扩散建模**，通过逐步去噪的过程生成精确的控制动作，避免了误差的累积。
-
-- **生成过程**：每个动作维度的离散 token 序列通过扩散模型逐步去噪，最终生成连续的控制信号：
-  ```
-  [图像 token] + [指令 token] + [历史动作 token_1, ..., token_i] → [动作 token_{i+1}]
-  ```
-
-- **输出格式**：生成的动作 token 序列会被解码为实际控制信号：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-
-⑧ **推理与解码（Inference and Decoding）**
-
-在推理时，RDT-1B 逐步生成动作 token 序列。每一步，模型根据当前的图像、语言和之前生成的动作 token 来预测下一个动作 token，直到生成完整的动作序列。
-
-- **生成过程**：
-  ```
-  [图像 token] + [指令 token] + [已生成的动作 token 序列] → [下一个动作 token]
-  ```
-
-⑨ **动作解码（Action Decoding）**
-
-生成的动作 token 序列通过解码器还原为连续的控制信号。每个 token 会根据其对应的离散区间（由 bin 中心表示）进行解码，最终生成机器人执行的控制信号。
-
-- **解码格式**：
-  ```
-  [动作 token_1, token_2, ..., token_k] → [动作值_1, 动作值_2, ..., 动作值_k]
-  ```
-
----
-
-
 
 
 
@@ -1504,6 +1369,24 @@ RDT-1B 的核心结构是一个 **28 层 Transformer（DiT架构）**，支持�
 1. 从离散表示向连续建模过渡：传统RT-1/2的离散策略逐渐被flow/diffusion等连续生成方式取代。
 2. 自回归限制被chunk解码替代：Octo、RDT-1B等使用chunk结构避免长序列token生成误差积累。
 3. 模块化结构成为主流：CogACT、Diffusion-VLA等将推理模块与动作生成模块解耦，利于泛化。
-4. 控制频率成为重要指标：如RDT-1B可达300Hz，已满足工业机器人控制要求。
+4. 控制频率成为重要指标：如Spatial VLA将token数压缩到了3个，大大提升了控制速度。
 
 
+## 六、附录
+### 1. FiLM {#sectionFiLM}
+特征线性调制（Feature-wise Linear Modulation，FiLM）层是一种神经网络模块，它可以用来实现特的条件调整。FiLM层的主要功能是对输入特征进行缩放（scaling）和偏移（shifting），并且这个缩和偏移是可以学习的。
+
+FiLM层的工作原理如下：给定一个输入特征x，FiLM层首先通过一个全连接层或其他形式的网络结生成两个参数γ和β，然后对输入特征进行缩放和偏移，即y = γ * x + β。这里，γ和β是与输入征x同样大小的向量，它们决定了对输入特征的缩放和偏移程度。
+
+FiLM层的主要作用是实现特征的条件调整，使得模型可以根据特定的条件（例如来自其他模态的信）来调整特征的表示。这种机制在许多任务中都很有用，例如在图像生成任务中，FiLM层可以用根据文本描述来调整生成的图像特征；在视频理解任务中，FiLM层可以用来根据音频信息来调整频特征。
+
+### 2. TokenLearner {#sectionTokenLearner}
+原论文 [TokenLearner: What Can 8 Learned Tokens Do for Images and Videos?](https://arxiv.org/abs/2106.11297)
+
+TokenLearner 是一种用于视觉 Transformer 的 可学习 token 压缩模块，通过动态选择最有信息的区域，将大量视觉 token 精简为少量关键 token，显著减少计算成本，同时保留语义信息。
+
+### 3. Latent Diffusion Model {#sectionLatent}
+原论文 [High-Resolution Image Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2112.10752)
+
+Latent Diffusion Model (LDM) 是一种先把图像压缩到“潜空间（latent space）”再用扩散模型（Diffusion Model）来建模的高效生成方法。
+相比直接在图像像素空间操作（比如512×512图像有26万维），LDM在一个小得多的压缩表示上进行扩散，大大减少了计算量，却保留了生成质量。
