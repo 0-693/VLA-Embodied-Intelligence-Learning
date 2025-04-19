@@ -974,7 +974,6 @@ Octo 使用来自 Open X-Embodiment 的 25 个数据子集（共 80 万轨迹）
 
 CogACT 是一个基于视觉、语言和动作的联合模型，采用**组件化结构**，将认知与动作建模进行解耦，结合大型语言模型和扩散模型的优势，用于高效的机器人控制任务。以下是 CogACT 的详细模型架构解构：
 
----
 
 ① **图像编码器（Vision Encoder）**
 
@@ -986,7 +985,6 @@ CogACT 使用 **DINOv2** 与 **SigLIP** 两种预训练图像编码器联合处�
   ```
   每个 token 表示图像局部区域的语义与空间特征组合。
 
----
 
 ② **语言编码器（Text Encoder）**
 
@@ -1002,7 +1000,6 @@ CogACT 并未采用 Qwen2-VL，而是使用了 **LLAMA-2** 作为语言模块。
   [视觉 token_1,...,token_n] + [语言 token_1,...,token_m] + [认知 token c] → LLAMA-2 → 输出 cognition feature f_c
   ```
 
----
 
 ③ **特征融合与位置编码（Feature Fusion and Positional Encoding）**
 
@@ -1013,7 +1010,6 @@ CogACT 并未采用 Qwen2-VL，而是使用了 **LLAMA-2** 作为语言模块。
   [视觉 tokens] + [语言 tokens] + [认知 token] → LLAMA-2 → 仅输出 f_c
   ```
 
----
 
 ④ **多层 Transformer 编码器（LLAMA-2 Causal Attention）**
 
@@ -1024,7 +1020,6 @@ CogACT 并未采用 Qwen2-VL，而是使用了 **LLAMA-2** 作为语言模块。
   [联合 token_1, ..., token_(n+m+1)] → LLAMA-2 → 只提取认知 token 的输出 → cognition feature f_c
   ```
 
----
 
 ⑤ **动作解码器（Action Head / Diffusion Action Module）**
 
@@ -1041,7 +1036,6 @@ CogACT 并不使用离散 token 或自回归结构，而是引入了 **Diffusion
   - 模型一次性预测当前及未来 15 步动作（N = 15）
   - 生成的是**连续值**，不是 token，也不使用 bin 编码
 
----
 
 ⑥ **推理过程（Inference Process）**
 
@@ -1053,7 +1047,6 @@ CogACT 并不使用离散 token 或自回归结构，而是引入了 **Diffusion
   → 与历史动作进行余弦加权 → 输出最终动作 â_t
   ```
 
----
 
 ⑦ **动作解码（Action Decoding）**
 
