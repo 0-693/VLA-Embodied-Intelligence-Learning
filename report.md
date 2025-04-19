@@ -2,8 +2,8 @@
 
 参考：https://github.com/TianxingChen/Embodied-AI-Guide
 
-## 一、写在前面——13个模型 Action Head 对比
-在本调研中，选取13个VLA模型，对比13个模型中的Action Head设计。在报告中，我将13个模型中的Action Head设计大致分为三大类，分别为多分类器类、自回归类、扩散建模类。
+## 一、写在前面——12个模型 Action Head 对比
+在本调研中，选取12个VLA模型，对比12个模型中的Action Head设计。在报告中，我将12个模型中的Action Head设计大致分为三大类，分别为多分类器类、自回归类、扩散建模类。
 下面两个表格分别为各种action head设计方式的对比表，以及各个模型的详细设计对照表。
 
 
@@ -15,14 +15,13 @@
 
 | **设计主类**        | **子类设计方式**                | **代表模型**                                      | **频率** | **设计核心/机制**                                             | **优点**                                                   | **缺点**                                                   |
 |---------------------|-------------------------------|--------------------------------------------------|--------------|-----------------------------------------------------------|-----------------------------------------------------|------------------------------------------------------------|
-| **一、多分类器类**   | **多头分类器（维度独立分类）**     | RT-1                                             | 中           | 每个动作维度使用一个分类器，输出bin编号                      | 实现简单，训练稳定，适合多维控制                           | 无法建模时间依赖，控制不连贯，精度有限                    |                 
+| **一、多分类器类**   | **多头分类器（维度独立分类）**     | RT-1                                             | 中           | 每个动作维度使用一个分类器，输出bin编号                      | 实现简单，训练稳定，适合多维控制                           | 无法建模时间依赖，控制不连贯，精度有限                    |    
+|                     | 草图条件 token 输出            | RT-Trajectory                                    | 中           | 用户绘制轨迹图+观测图送入模型，输出动作token序列，每个动作维度使用一个分类器             | 人机交互友好，可引导轨迹生成                               | 仅限支持图像提示任务                                       |             
 | **二、自回归类**     | **离散 token 预测**                | RT-2, OpenVLA, TraceVLA                          | 中高         | 动作离散为token，逐步生成token序列                           | 统一语言-动作token空间，结构简洁，兼容VLM                 | 推理慢，误差积累，不适合高频控制                          |
-|                     | 草图条件 token 输出            | RT-Trajectory                                    | 中           | 用户绘制轨迹图+观测图送入模型，输出动作token序列             | 人机交互友好，可引导轨迹生成                               | 仅限支持图像提示任务                                       |
 |                     | Token压缩（频域+BPE）          | FAST（π0附属）                                   | 高           | 动作频域DCT压缩+BPE编码为短token序列                         | 推理速度极快，token数大幅减少，压缩率高                   | 压缩损失可能影响极端精度；需可逆设计                      |
 |                     | 动作网格离散（空间token）      | SpatialVLA                                       | 高           | 预定义空间网格+每帧输出3个token（平移、旋转、gripper）        | 空间感知强，token效率极高                                 | 需统计先验分布，灵活性差                                  |
 | **三、扩散建模类**   | **标准扩散（DDPM）**               | Octo, CogACT, Diffusion-VLA, TinyVLA             | 高           | 使用多步扩散生成连续动作向量，支持chunk输出                  | 高精度、高表达力，chunk生成，支持非自回归控制             | 推理慢，训练成本高，扩散过程复杂                         |
 |                     | **Flow Matching（ODE建模）**       | π0                                               | 高           | 学习动作向量场，使用欧拉积分从初始噪声生成动作                | 速度快，接近扩散质量但更高效                               | 积分路径与训练范数要求高                                |
-|                     | Latent Diffusion + MLP 解码    | RDT-1B                                           | 超高         | 在latent空间扩散，MLP恢复控制序列，支持双臂控制               | 控制频率高（300Hz+），适合多机器人系统                    | 架构复杂，对训练/注入策略依赖大                           |
 |                     | Reasoning-Injection扩散        | CogACT, Diffusion-VLA                            | 高           | 先用LLM进行任务推理，reasoning token 作为扩散输入条件         | 可解释性好，语义控制强，适合多阶段复杂任务                | 模块解耦多，训练成本高，对任务规划依赖高                  |
 
 - 文章后续会详细分析多分类方式中的**多分类器**、自回归方式中的**离散token预测**以及扩散建模方式中的**DDPM**与**FLOW MATCHING**建模方式。
@@ -30,22 +29,22 @@
 ---
 
 
-## 13种模型的 Action Head 设计方式对比表
+## 12种模型的 Action Head 设计方式对比表
 | 模型         | Action Head             | 是否自回归 | 是否使用扩散 | 控制频率 | token 数 | 特点简述                              |
 |--------------|--------------------------|--------------|----------------|------------|-------------|---------------------------------------|
 | RT-1         | 多分类器（11维）         | 否           | 否             | 中         | 11         | 并行输出，结构简单                    |
 | RT-2         | 离散token自回归          | 是           | 否             | 中         | 7-8        | 与语言token统一                       |
-| RT-Trajectory| 草图条件控制 + transformer | 是         | 否             | 中         | /         | 支持用户可绘制控制                    |
+| RT-Trajectory| 多分类器（8维） | 是         | 否             | 中         | 8         | 支持用户可绘制控制                    |
 | OpenVLA      | 离散token（映射VLM空间）  | 是           | 否             | 中         | 7          | 与RT-2相似，支持LoRA量化              |
 | TinyVLA      | Diffusion Policy（简化）  | 否           | 是             | 高         | 无         | 单步输出，极速推理                    |
 | TraceVLA     | 离散token + 轨迹提示     | 是           | 否             | 高         | 7          | 提高空间-时间理解                     |
 | Octo         | Diffusion + Chunk Decoder | 否           | 是             | 高         | 无         | 支持长序列chunk输出                   |
-| π0           | Flow Matching + Expert     | 否           | 是             | 高         | 无         | 较快推理速度，支持动作连贯建模       |
-| CogACT       | LLM推理 + Diffusion Head  | 否           | 是             | 高         | 无         | 解耦推理与控制模块，具可解释性       |
-| Diffusion-VLA| FiLM注入 + Latent Diffusion | 否        | 是             | 高         | 无         | Reasoning token引导控制               |
+| π0           | Flow Matching      | 否           | 是             | 高         | 无         | 较快推理速度，支持动作连贯建模       |
+| CogACT       | Diffusion Head  | 否           | 是             | 高         | 无         | 解耦推理与控制模块，具可解释性       |
+| Diffusion-VLA| Latent Diffusion | 否        | 是             | 高         | 无         | Reasoning token引导控制               |
 | FAST（π0）         | DCT压缩 + BPE token       | 是           | 否             | 高         | 30-60      | token效率最优，自回归但推理极快      |
 | SpatialVLA   | Adaptive Grid token       | 是           | 否             | 高         | 3          | 空间感知强，低token数                 |
-| RDT-1B       | Latent Diffusion + MLP    | 否           | 是             | 超高       | 无         | 支持双臂、底盘控制，兼容多平台        |
+
 
 ## 二、Action Head的定义
 Action head的命名在业界似乎不太一致。模型如Octo，在论文中有明确提到action head模块；但是其他的模型如π0等，虽然有类似的功能模块，但是没有明确命名为action head模块（文章中定义了一个action expert模块，实现的功能类似于Octo种的action head模块）；也有模型如RT-2，在论文中并没有明确定义为action head模块，而是直接将transformer模块中的输出映射到token空间，作为控制指令输出，也同样实现了类似的功能。
@@ -260,7 +259,7 @@ Octo 的 Diffusion Action Head 通过扩散过程学习从噪声中恢复动作�
 3. **决策推理模块（Reasoning Module）**：如CogACT、Diffusion-VLA中使用LLM reasoning token；RT-Trajectory使用草图轨迹。
 4. **控制解码器（Action Decoder / Head）**：将前面全部信息映射为连续控制指令。
 
-下面逐一拆解13个模型的整体结构，并指出 Action Head 所在的位置：
+下面逐一拆解12个模型的整体结构，并指出 Action Head 所在的位置：
 
 ### 1. RT-1
 - 架构：图像编码器（EfficientNet）+ 任务指令嵌入（USE）+ 多层Transformer → 多分类器
@@ -273,7 +272,7 @@ Octo 的 Diffusion Action Head 通过扩散过程学习从噪声中恢复动作�
 ---
 
 
-### RT-1 模型架构详解
+#### RT-1 模型架构详解
 
 RT-1 是一个以 Transformer 为核心的多模态机器人控制模型，其输入为语言指令和图像观测，输出为一系列离散的控制动作。每个动作维度由单独的分类器进行预测，最终得到完整的动作向量。
 
@@ -297,13 +296,13 @@ RT-1 使用 **Universal Sentence Encoder（USE）** 对语言指令进行编码�
   ```
   每个 token 表示语言中的一个单词或子词。
 
-③ **FiLM 层条件化**
+③ [**FiLM 层条件化**](#sectionFiLM)
 
-图像 token 和语言 token 被结合在一起，通过 **FiLM（Feature-wise Linear Modulation）** 层对图像编码器进行条件化，使得图像特征与语言指令关联，从而加强模型对任务的理解。FiLM 层允许图像特征在语言指导下得到调整。
+图像 token 和语言 token 被结合在一起，通过 [**FiLM（Feature-wise Linear Modulation）**](#sectionFiLM) 层对图像编码器进行条件化，使得图像特征与语言指令关联，从而加强模型对任务的理解。FiLM 层允许图像特征在语言指导下得到调整。
 
-④ **TokenLearner**
+④ [**TokenLearner**](#sectionTokenLearner)
 
-为了进一步压缩 token 的数量并加速推理，RT-1 使用了 **TokenLearner** 模块。这一模块通过学习对图像 token 进行选择性筛选，从而仅保留对当前任务最重要的图像信息。这减少了 Transformer 编码器的计算负担。
+为了进一步压缩 token 的数量并加速推理，RT-1 使用了 [**TokenLearner**](#sectionTokenLearner) 模块。这一模块通过学习对图像 token 进行选择性筛选，从而仅保留对当前任务最重要的图像信息。这减少了 Transformer 编码器的计算负担。
 
 - **输出格式**：通过 TokenLearner 模块，RT-1 只保留 8 个视觉 token：
   ```
@@ -316,7 +315,7 @@ RT-1 使用 **Universal Sentence Encoder（USE）** 对语言指令进行编码�
 
 - **输入格式**：拼接后的图像和语言 token 输入到 Transformer 编码器：
   ```
-  [图像 token_1, ..., token_8] + [指令 token_1, ..., token_m] → [输出 token_1, ..., token_(8+m)]
+  [图像 token_1, ..., token_8] + [语言 token_1, ..., 语言token_m] → [输出 token_1, ..., token_(8+m)]
   ```
 
 ⑥ **动作离散化（Action Discretization）**
@@ -327,10 +326,11 @@ RT-1 将每个动作维度离散化为 256 个 bins。每个动作维度的离�
   ```
   [动作维度_1] → [动作 token_1, token_2, ..., token_256]
   [动作维度_2] → [动作 token_257, token_258, ..., token_512]
+  ......
   ```
 
 ⑦ **动作头（Action Head）**
-
+(不难看出RT-1的Action Head并不是一个独立的模块，是隐含在Transformer编码器中的)
 Transformer 输出的 token（特别是图像 token）通过多个并行的分类器进行预测，每个分类器负责预测一个动作维度的离散化值。最终模型输出 11 个动作维度的预测结果。
 
 - **输出格式**：每个动作维度通过分类器输出 256 个 token，最终拼接成完整的动作序列：
@@ -363,10 +363,18 @@ RT-1 通过将图像、语言和动作任务视为序列建模问题，采用 Tr
 
 
 ### 2. RT-2
+**核心思想：将大规模预训练的视觉-语言模型直接整合到低层机器人控制中，从而提升泛化能力并实现语义推理能力的涌现**
 - 架构：图像编码器 + LLM backbone（PaLI-X, PaLM-E）+ 动作token输出
 - Action Head：token自回归生成动作，动作与语言共用词表。
 
-![RT-2](pic/RT-2.png) 
+RT-2 的研究目标是将基于互联网上大规模数据训练的视觉-语言模型，直接迁移用于机器人控制任务。
+其核心创新在于：
+
+- 将动作表示为文本 token，统一语言与动作的训练格式；
+
+- 联合微调（co-fine-tuning）：同时在机器人轨迹数据与视觉语言任务上训练；
+
+- 避免重新设计模型架构，直接在强大的视觉-语言预训练模型基础上微调；
 
 - 实现语义泛化能力和推理能力的涌现，例如理解图标、数字、相对关系、甚至执行多步骤规划。
 
