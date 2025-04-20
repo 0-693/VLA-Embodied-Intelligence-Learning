@@ -39,7 +39,7 @@ x_{k-1} &= \alpha \left( x_k - \gamma \epsilon_\theta \left( x_k, e, k \right) \
 \end{align*}
 $$
 
-其中 $x_k$ 是当前噪声状态，$e$ 为 transformer 提供的上下文表示，$\epsilon_\theta$ 是预测网络。
+其中 $(x_k)$ 是当前噪声状态，$(e)$ 为 transformer 提供的上下文表示，$(\epsilon_\theta)$ 是预测网络。
 
 - 噪声调度采用 cosine schedule。
 
