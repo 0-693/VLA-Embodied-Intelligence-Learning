@@ -32,14 +32,13 @@ Octo 的 Action Head 不再将动作离散为 token 或直接用 MSE 回归单�
 #### 扩散过程：
 
 - 使用标准 DDPM 机制进行训练和生成，包含 20 步反向去噪：
-
   \[
-  x_{k-1} = \alpha(x_k - \gamma \epsilon_\theta(x_k, e, k)) + \mathcal{N}(0, \sigma^2 I)
+  x_{k-1} = \alpha \left( x_k - \gamma \epsilon_\theta \left( x_k, e, k \right) \right) + \mathcal{N} \left( 0, \sigma^2 I \right)
   \]
-
-  其中 \(x_k\) 是当前噪声状态，\(e\) 为 transformer 提供的上下文表示，\(\epsilon_\theta\) 是预测网络。
+  其中 \( x_k \) 是当前噪声状态，\( e \) 为 transformer 提供的上下文表示，\( \epsilon_\theta \) 是预测网络。
 
 - 噪声调度采用 cosine schedule。
+
 
 
 #### 动作 chunk 表达：
