@@ -39,13 +39,14 @@
 
 #### 训练阶段：
 - 损失函数组合：
-  \[
-  \mathcal{L} = \mathcal{L}_{\text{diffusion}} + \alpha \cdot \mathcal{L}_{\text{NTP}}
-  \]
-  其中：
-  - $ \( \mathcal{L}_{\text{diffusion}} \) $：用于训练动作解码器；
-  - $ \( \mathcal{L}_{\text{NTP}} \) $：用于训练推理模块的 next-token prediction；
-  - $ \( \alpha = 1 \) $，保证推理和控制学习平衡。
+损失函数定义为：
+
+L = L_diffusion + α·L_NTP
+
+其中：
+- L_diffusion：用于训练动作解码器
+- L_NTP：用于训练推理模块的 next-token prediction
+- α = 1（保证推理和控制学习平衡）
 
 #### 推理阶段：
 - 语言输入生成 reasoning phrase；
