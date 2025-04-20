@@ -54,8 +54,11 @@ CogACT 将动作建模过程分为两阶段：
 
 
 $$
-\mathcal{L}_{\text{diff}} = \mathbb{E}[\|\epsilon - \epsilon_\theta(x_t, c)\|^2]
+\begin{align*}
+\mathcal{L}_{\text{diff}} &= \mathbb{E}\left[\|\epsilon - \epsilon_\theta(x_t, c)\|^2\right]
+\end{align*}
 $$
+
 
 
 
