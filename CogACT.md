@@ -1,88 +1,90 @@
 
 
-## CogACT µÄ Action Head Éè¼ÆÏê½â
+## CogACT çš„ Action Head è®¾è®¡è¯¦è§£
 
-CogACT ÊÇÒ»¸öÈÚºÏÍÆÀíÄ£¿éµÄÊÓ¾õ-ÓïÑÔ-¶¯×÷£¨VLA£©Ä£ÐÍ£¬Æä **Action Head** »ùÓÚ**Ìõ¼þÀ©É¢Ä£ÐÍ£¨Conditional Diffusion Model£©** ÊµÏÖ£¬½áºÏÓïÑÔÄ£ÐÍÉú³ÉµÄ¸ß²ã´ÎÓïÒå token ºÍ¶àÄ£Ì¬¹Û²ì£¬Éú³É¸ß¾«¶ÈµÄÁ¬Ðø¶¯×÷ÏòÁ¿£¬Ö§³Ö¸´ÔÓ²Ù×÷ÈÎÎñºÍ¸ßÊ±Ðò¿ØÖÆÐèÇó¡£
+CogACT æ˜¯ä¸€ä¸ªèžåˆæŽ¨ç†æ¨¡å—çš„è§†è§‰-è¯­è¨€-åŠ¨ä½œï¼ˆVLAï¼‰æ¨¡åž‹ï¼Œå…¶ **Action Head** åŸºäºŽ**æ¡ä»¶æ‰©æ•£æ¨¡åž‹ï¼ˆConditional Diffusion Modelï¼‰** å®žçŽ°ï¼Œç»“åˆè¯­è¨€æ¨¡åž‹ç”Ÿæˆçš„é«˜å±‚æ¬¡è¯­ä¹‰ token å’Œå¤šæ¨¡æ€è§‚å¯Ÿï¼Œç”Ÿæˆé«˜ç²¾åº¦çš„è¿žç»­åŠ¨ä½œå‘é‡ï¼Œæ”¯æŒå¤æ‚æ“ä½œä»»åŠ¡å’Œé«˜æ—¶åºæŽ§åˆ¶éœ€æ±‚ã€‚
 
 ---
 
-### Ò»¡¢ºËÐÄË¼Ïë
+### ä¸€ã€æ ¸å¿ƒæ€æƒ³
 
-CogACT ½«¶¯×÷½¨Ä£¹ý³Ì·ÖÎªÁ½½×¶Î£º
+CogACT å°†åŠ¨ä½œå»ºæ¨¡è¿‡ç¨‹åˆ†ä¸ºä¸¤é˜¶æ®µï¼š
 
-| ½×¶Î             | ËµÃ÷                                                           |
+| é˜¶æ®µ             | è¯´æ˜Ž                                                           |
 |------------------|----------------------------------------------------------------|
-| ×Ô»Ø¹é½×¶Î        | Ê¹ÓÃ LLM ÍÆÀíÄ£¿éÉú³ÉÓïÑÔ token ×÷ÎªÉÏÏÂÎÄÌõ¼þ                     |
-| ¶¯×÷Éú³É½×¶Î£¨Action Head£© | Ê¹ÓÃ**Latent Diffusion Policy Head**£¬½«ÉÏÏÂÎÄ±àÂë½âÂëÎªÁ¬Ðø¶¯×÷ÏòÁ¿ |
+| è‡ªå›žå½’é˜¶æ®µ        | ä½¿ç”¨ LLM æŽ¨ç†æ¨¡å—ç”Ÿæˆè¯­è¨€ token ä½œä¸ºä¸Šä¸‹æ–‡æ¡ä»¶                     |
+| åŠ¨ä½œç”Ÿæˆé˜¶æ®µï¼ˆAction Headï¼‰ | ä½¿ç”¨**Latent Diffusion Policy Head**ï¼Œå°†ä¸Šä¸‹æ–‡ç¼–ç è§£ç ä¸ºè¿žç»­åŠ¨ä½œå‘é‡ |
 
-¸Ã¶¯×÷Í·²ÉÓÃ±ê×¼µÄ **DDPM£¨Denoising Diffusion Probabilistic Model£©** ¿ò¼Ü£¬²¢Í¨¹ýÍÆÀíÄ£¿éµÄÖÐ¼ä±íÊ¾½øÐÐÌõ¼þ¿ØÖÆ£¬Ö§³Ö¶àÖÖ»úÆ÷ÈË¿ØÖÆÀàÐÍ¡£
-
----
-
-### ¶þ¡¢¶¯×÷Í·½á¹¹Óë»úÖÆ
-
-#### ¶¯×÷½¨Ä£·½Ê½
-
-- Ê¹ÓÃÒ»¸ö**Latent Diffusion Decoder**£¬½« Transformer ±àÂëºóµÄÓïÒå±íÊ¾½âÂëÎª¶¯×÷£»
-- ¶¯×÷Î¬¶È°üÀ¨»úÆ÷ÈËÄ©¶ËÖ´ÐÐÆ÷µÄÎ»ÖÃ/×ËÌ¬/¼Ð×¦×´Ì¬µÈ£»
-- Ã¿´ÎÉú³ÉÒ»¸öÍêÕûµÄ joint-space ¿ØÖÆÏòÁ¿£¨ÊÊÓÃÓÚ¶à¸ö robot embodiment£©£»
-
-#### ÍøÂç½á¹¹£º
-
-- **Transformer Encoder**£¨´¦ÀíÊÓ¾õ¡¢ÓïÑÔ¡¢¶àÄ£Ì¬ÊäÈë£©£»
-- **Diffusion Policy Decoder**£¨¶¯×÷Éú³É²¿·Ö£©£º
-  - ±ê×¼ DDPM ½á¹¹£»
-  - Ìõ¼þÊäÈëÎª LLM reasoning tokens£»
-  - ¶¯×÷½âÂëÊä³öÎ¬¶È¿É±ä£¨¸ù¾Ý»úÆ÷ÊÖ±Û×ÔÓÉ¶È£©£»
-  - ×îºóÒ»²ãÎª **MLP ¡ú Joint Space ¶¯×÷ÏòÁ¿**¡£
-
-#### ÍÆÀíÄ£¿é×¢Èë£º
-
-- ½« reasoning Ä£¿éÊä³öµÄÓïÒå token ×¢Èëµ½ Transformer ±àÂëÆ÷£»
-- Ê¹ÓÃ FiLM£¨Feature-wise Linear Modulation£©·½Ê½ÊµÏÖÄ£¿éµ÷¿Ø£»
-- ±ÜÃâ½« reasoning Êä³ö×÷ÎªÖ±½Ó token£¬ÌáÉýÍÆÀíÐ§ÂÊÓëÎÈ¶¨ÐÔ¡£
+è¯¥åŠ¨ä½œå¤´é‡‡ç”¨æ ‡å‡†çš„ **DDPMï¼ˆDenoising Diffusion Probabilistic Modelï¼‰** æ¡†æž¶ï¼Œå¹¶é€šè¿‡æŽ¨ç†æ¨¡å—çš„ä¸­é—´è¡¨ç¤ºè¿›è¡Œæ¡ä»¶æŽ§åˆ¶ï¼Œæ”¯æŒå¤šç§æœºå™¨äººæŽ§åˆ¶ç±»åž‹ã€‚
 
 ---
 
-### Èý¡¢ÑµÁ·ÓëÍÆÀíÁ÷³Ì
+### äºŒã€åŠ¨ä½œå¤´ç»“æž„ä¸Žæœºåˆ¶
 
-#### ÑµÁ·½×¶Î£º
+#### åŠ¨ä½œå»ºæ¨¡æ–¹å¼
 
-- ¶¯×÷ÏòÁ¿¼ÓÔëÐÎ³É latent£»
-- Ê¹ÓÃ diffusion decoder Ô¤²âÔëÉù»ò denoising vector£»
-- ÓÅ»¯ DDPM ËðÊ§£º
-  \[
+- ä½¿ç”¨ä¸€ä¸ª**Latent Diffusion Decoder**ï¼Œå°† Transformer ç¼–ç åŽçš„è¯­ä¹‰è¡¨ç¤ºè§£ç ä¸ºåŠ¨ä½œï¼›
+- åŠ¨ä½œç»´åº¦åŒ…æ‹¬æœºå™¨äººæœ«ç«¯æ‰§è¡Œå™¨çš„ä½ç½®/å§¿æ€/å¤¹çˆªçŠ¶æ€ç­‰ï¼›
+- æ¯æ¬¡ç”Ÿæˆä¸€ä¸ªå®Œæ•´çš„ joint-space æŽ§åˆ¶å‘é‡ï¼ˆé€‚ç”¨äºŽå¤šä¸ª robot embodimentï¼‰ï¼›
+
+#### ç½‘ç»œç»“æž„ï¼š
+
+- **Transformer Encoder**ï¼ˆå¤„ç†è§†è§‰ã€è¯­è¨€ã€å¤šæ¨¡æ€è¾“å…¥ï¼‰ï¼›
+- **Diffusion Policy Decoder**ï¼ˆåŠ¨ä½œç”Ÿæˆéƒ¨åˆ†ï¼‰ï¼š
+  - æ ‡å‡† DDPM ç»“æž„ï¼›
+  - æ¡ä»¶è¾“å…¥ä¸º LLM reasoning tokensï¼›
+  - åŠ¨ä½œè§£ç è¾“å‡ºç»´åº¦å¯å˜ï¼ˆæ ¹æ®æœºå™¨æ‰‹è‡‚è‡ªç”±åº¦ï¼‰ï¼›
+  - æœ€åŽä¸€å±‚ä¸º **MLP â†’ Joint Space åŠ¨ä½œå‘é‡**ã€‚
+
+#### æŽ¨ç†æ¨¡å—æ³¨å…¥ï¼š
+
+- å°† reasoning æ¨¡å—è¾“å‡ºçš„è¯­ä¹‰ token æ³¨å…¥åˆ° Transformer ç¼–ç å™¨ï¼›
+- ä½¿ç”¨ FiLMï¼ˆFeature-wise Linear Modulationï¼‰æ–¹å¼å®žçŽ°æ¨¡å—è°ƒæŽ§ï¼›
+- é¿å…å°† reasoning è¾“å‡ºä½œä¸ºç›´æŽ¥ tokenï¼Œæå‡æŽ¨ç†æ•ˆçŽ‡ä¸Žç¨³å®šæ€§ã€‚
+
+---
+
+### ä¸‰ã€è®­ç»ƒä¸ŽæŽ¨ç†æµç¨‹
+
+#### è®­ç»ƒé˜¶æ®µï¼š
+
+- åŠ¨ä½œå‘é‡åŠ å™ªå½¢æˆ latentï¼›
+- ä½¿ç”¨ diffusion decoder é¢„æµ‹å™ªå£°æˆ– denoising vectorï¼›
+- ä¼˜åŒ– DDPM æŸå¤±ï¼š
+  $$
+  \begin{align*}
   \mathcal{L}_{\text{diff}} = \mathbb{E}[\|\epsilon - \epsilon_\theta(x_t, c)\|^2]
-  \]
+  \end{align*}
+  $$
 
-#### ÍÆÀí½×¶Î£º
+#### æŽ¨ç†é˜¶æ®µï¼š
 
-- ¸ø¶¨µ±Ç°ÊÓ¾õ¹Û²â + ÈÎÎñÎÄ±¾£»
-- LLM reasoning ¡ú Transformer token embedding£»
-- DDPM ¶à²½²ÉÑù¶¯×÷ latent ¡ú Ô¤²â robot joint ¿ØÖÆ¶¯×÷¡£
+- ç»™å®šå½“å‰è§†è§‰è§‚æµ‹ + ä»»åŠ¡æ–‡æœ¬ï¼›
+- LLM reasoning â†’ Transformer token embeddingï¼›
+- DDPM å¤šæ­¥é‡‡æ ·åŠ¨ä½œ latent â†’ é¢„æµ‹ robot joint æŽ§åˆ¶åŠ¨ä½œã€‚
 
 ---
 
-### ËÄ¡¢ÓëÆäËûÄ£ÐÍ¶Ô±È£¨Action Head£©
+### å››ã€ä¸Žå…¶ä»–æ¨¡åž‹å¯¹æ¯”ï¼ˆAction Headï¼‰
 
 
-| Ä£ÐÍ         | Action Head ÀàÐÍ                     | ÊÇ·ñ×Ô»Ø¹é | ÊÇ·ñÓïÑÔÁªºÏ | ¿ØÖÆÁ£¶È | Ä£¿é½á¹¹                     |
+| æ¨¡åž‹         | Action Head ç±»åž‹                     | æ˜¯å¦è‡ªå›žå½’ | æ˜¯å¦è¯­è¨€è”åˆ | æŽ§åˆ¶ç²’åº¦ | æ¨¡å—ç»“æž„                     |
 |--------------|----------------------------------------|--------------|----------------|------------|------------------------------|
-| RT-2         | token-based autoregressive             | ÊÇ           | ÊÇ             | ÖÐ         | Í³Ò»½á¹¹                     |
-| OpenVLA      | token ¡ú De-Tokenizer                   | ÊÇ           | ÊÇ            | ÖÐ         | ¹²ÏíÊä³ö¿Õ¼ä                 |
-| Octo         | MLP + Diffusion Chunk Decoder          | ·ñ          | ²¿·Ö          | ¸ß         | ½âñî½á¹¹£¨¶¯×÷ readout£©     |
-| ¦Ð0           | Flow Matching + Action Expert          | ·ñ          | ÊÇ             | ¸ß         | **VLM + ×¨ÓÃ¶¯×÷Ä£¿é½âñî**    |
-| **CogACT**   | **LLM reasoning + Diffusion Head**     | ·ñ          | ÊÇ£¨ÍÆÀíÔöÇ¿£© | **¸ß**     | **LLM + Diffusion ½âñî½á¹¹** |
+| RT-2         | token-based autoregressive             | æ˜¯           | æ˜¯             | ä¸­         | ç»Ÿä¸€ç»“æž„                     |
+| OpenVLA      | token â†’ De-Tokenizer                   | æ˜¯           | æ˜¯            | ä¸­         | å…±äº«è¾“å‡ºç©ºé—´                 |
+| Octo         | MLP + Diffusion Chunk Decoder          | å¦          | éƒ¨åˆ†          | é«˜         | è§£è€¦ç»“æž„ï¼ˆåŠ¨ä½œ readoutï¼‰     |
+| Ï€0           | Flow Matching + Action Expert          | å¦          | æ˜¯             | é«˜         | **VLM + ä¸“ç”¨åŠ¨ä½œæ¨¡å—è§£è€¦**    |
+| **CogACT**   | **LLM reasoning + Diffusion Head**     | å¦          | æ˜¯ï¼ˆæŽ¨ç†å¢žå¼ºï¼‰ | **é«˜**     | **LLM + Diffusion è§£è€¦ç»“æž„** |
 
 
 ---
 
 
-### Îå¡¢Éè¼ÆÓÅÊÆ×Ü½á
+### äº”ã€è®¾è®¡ä¼˜åŠ¿æ€»ç»“
 
-- **ÍÆÀí-¶¯×÷½âñî¼Ü¹¹**£ºÓïÑÔ token ²»ÔÙ²ÎÓë¶¯×÷Êä³ö£¬ÌáÉýÂ³°ôÐÔÓëÐ§ÂÊ£»
-- **¸ß¾«¶ÈÀ©É¢¿ØÖÆ**£ºÏà±È»Ø¹é/token·½·¨¸üÆ½»¬¡¢¸üÄÜ½¨Ä£¶¯×÷¶àÑùÐÔ£»
-- **¿É½âÊÍ reasoning »úÖÆ**£ºLLM reasoning ½á¹û¿ÉÊÓ»¯£¬Ö§³Ö´íÎóÕï¶ÏÓëµ÷ÊÔ£»
-- **¶à embodiment ÊÊÅä**£ºÍ¨¹ýÇÐ»» MLP Êä³ö²ãÊÊÅä²»Í¬»úÆ÷ÈË½á¹¹£»
-- **Áé»îÎ¢µ÷²ßÂÔ**£º¿Éµ¥¶ÀÎ¢µ÷ reasoning Ä£¿é»ò¶¯×÷Éú³ÉÄ£¿é¡£
+- **æŽ¨ç†-åŠ¨ä½œè§£è€¦æž¶æž„**ï¼šè¯­è¨€ token ä¸å†å‚ä¸ŽåŠ¨ä½œè¾“å‡ºï¼Œæå‡é²æ£’æ€§ä¸Žæ•ˆçŽ‡ï¼›
+- **é«˜ç²¾åº¦æ‰©æ•£æŽ§åˆ¶**ï¼šç›¸æ¯”å›žå½’/tokenæ–¹æ³•æ›´å¹³æ»‘ã€æ›´èƒ½å»ºæ¨¡åŠ¨ä½œå¤šæ ·æ€§ï¼›
+- **å¯è§£é‡Š reasoning æœºåˆ¶**ï¼šLLM reasoning ç»“æžœå¯è§†åŒ–ï¼Œæ”¯æŒé”™è¯¯è¯Šæ–­ä¸Žè°ƒè¯•ï¼›
+- **å¤š embodiment é€‚é…**ï¼šé€šè¿‡åˆ‡æ¢ MLP è¾“å‡ºå±‚é€‚é…ä¸åŒæœºå™¨äººç»“æž„ï¼›
+- **çµæ´»å¾®è°ƒç­–ç•¥**ï¼šå¯å•ç‹¬å¾®è°ƒ reasoning æ¨¡å—æˆ–åŠ¨ä½œç”Ÿæˆæ¨¡å—ã€‚
 
