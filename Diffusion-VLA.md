@@ -1,77 +1,77 @@
 
 
-## Diffusion-VLA µÄ Action Head Éè¼ÆÏê½â
+## Diffusion-VLA çš„ Action Head è®¾è®¡è¯¦è§£
 
-**Diffusion-VLA (DiVLA)** Ìá³öÁËÒ»ÖÖÍ³Ò»µÄÍÆÀíÓë¶¯×÷Éú³É¼Ü¹¹£¬½« **×Ô»Ø¹éÓïÑÔÄ£ÐÍ£¨ÓÃÓÚÍÆÀí£©** Óë **À©É¢Ä£ÐÍ£¨ÓÃÓÚ¶¯×÷Éú³É£©** Ïà½áºÏ¡£Æä **Action Head** ²ÉÓÃ **Latent Diffusion Policy Head**£¬»ùÓÚ¸ßÎ¬ÊÓ¾õ-ÓïÑÔ-ÓïÒåÉÏÏÂÎÄ£¬ÔÚÁ¬Ðø¶¯×÷¿Õ¼äÖÐÉú³É¸ßÖÊÁ¿µÄ¶¯×÷ÏòÁ¿ÐòÁÐ£¬Ö§³Ö¸ßÆµÂÊ»úÆ÷ÈË¿ØÖÆºÍ¶àÈÎÎñ·º»¯¡£
+**Diffusion-VLA (DiVLA)** æå‡ºäº†ä¸€ç§ç»Ÿä¸€çš„æŽ¨ç†ä¸ŽåŠ¨ä½œç”Ÿæˆæž¶æž„ï¼Œå°† **è‡ªå›žå½’è¯­è¨€æ¨¡åž‹ï¼ˆç”¨äºŽæŽ¨ç†ï¼‰** ä¸Ž **æ‰©æ•£æ¨¡åž‹ï¼ˆç”¨äºŽåŠ¨ä½œç”Ÿæˆï¼‰** ç›¸ç»“åˆã€‚å…¶ **Action Head** é‡‡ç”¨ **Latent Diffusion Policy Head**ï¼ŒåŸºäºŽé«˜ç»´è§†è§‰-è¯­è¨€-è¯­ä¹‰ä¸Šä¸‹æ–‡ï¼Œåœ¨è¿žç»­åŠ¨ä½œç©ºé—´ä¸­ç”Ÿæˆé«˜è´¨é‡çš„åŠ¨ä½œå‘é‡åºåˆ—ï¼Œæ”¯æŒé«˜é¢‘çŽ‡æœºå™¨äººæŽ§åˆ¶å’Œå¤šä»»åŠ¡æ³›åŒ–ã€‚
 
 ---
 
-### Ò»¡¢ºËÐÄË¼Ïë
+### ä¸€ã€æ ¸å¿ƒæ€æƒ³
 
-| ×é¼þ               | ËµÃ÷                                                           |
+| ç»„ä»¶               | è¯´æ˜Ž                                                           |
 |--------------------|----------------------------------------------------------------|
-| ÍÆÀíÄ£¿é            | Ê¹ÓÃ LLM£¨Èç Qwen2-VL£©Éú³ÉÎÄ±¾ÍÆÀíÐÅÏ¢                     |
-| ¶¯×÷½âÂëÆ÷£¨Action Head£© | »ùÓÚ **Latent Diffusion Ä£ÐÍ**£¬Êä³ö»úÆ÷ÈË¶¯×÷£¨joint space£© |
+| æŽ¨ç†æ¨¡å—            | ä½¿ç”¨ LLMï¼ˆå¦‚ Qwen2-VLï¼‰ç”Ÿæˆæ–‡æœ¬æŽ¨ç†ä¿¡æ¯                     |
+| åŠ¨ä½œè§£ç å™¨ï¼ˆAction Headï¼‰ | åŸºäºŽ **Latent Diffusion æ¨¡åž‹**ï¼Œè¾“å‡ºæœºå™¨äººåŠ¨ä½œï¼ˆjoint spaceï¼‰ |
 
-¶¯×÷²»ÔÙÀëÉ¢Îª token£¬Ò²²»Ê¹ÓÃ×Ô»Ø¹é½á¹¹£¬¶øÊÇÓÉÒ»¸öÌõ¼þÀ©É¢Ä£ÐÍÖ±½Ó´Ó¸ßË¹ÔëÉùÖÐ²ÉÑù£¬Öð²½È¥Ôë»ñµÃÍêÕû¶¯×÷ÏòÁ¿¡£
-
----
-
-### ¶þ¡¢Action Head µÄ½á¹¹Óë»úÖÆ
-
-#### ÊäÈëÌõ¼þ£º
-- ¶àÄ£Ì¬±àÂë£¨Í¼Ïñ¡¢ÎÄ±¾£©À´×Ô VLM backbone£»
-- ÍÆÀí½á¹û£¨Reasoning Token£©Í¨¹ý **FiLM£¨Feature-wise Linear Modulation£©** ×¢ÈëÀ©É¢Ä£ÐÍ£¬×÷ÎªÌõ¼þÏòÁ¿£»
-- ¿ØÖÆÄ¿±êÎª»úÆ÷ÈËµÄ joint-space ¶¯×÷£¨Èç 7DOF Ä©¶Ë + gripper£©¡£
-
-#### À©É¢¹ý³Ì£º
-- Ê¹ÓÃ±ê×¼ DDPM À©É¢¹ý³Ì£¬ÔÚ latent ¿Õ¼ä½øÐÐ¶¯×÷½¨Ä££»
-- Ã¿²½¶¯×÷´Ó¸ßË¹ÔëÉùÖð²½È¥ÔëÉú³É£»
-- ¿ØÖÆÆµÂÊ¸ß´ï 82Hz£¨DiVLA-2B£©£¬¿É²¿ÊðÓÚÕæÊµ»úÆ÷ÈË¡£
-
-#### Êä³ö²ã£º
-- À©É¢¹ý³Ì×îºóÁ¬½ÓÒ»¸ö MLP ½âÂëÆ÷£¬ÓÃÓÚ½«È¥Ôë latent Ó³ÉäÎª¾ßÌå¶¯×÷£»
-- Èô»» robot embodiment£¬½öÐèÌæ»» MLP Êä³ö²ã£¨ÎÞÐèÖØÑµÄ£ÐÍ£©¡£
+åŠ¨ä½œä¸å†ç¦»æ•£ä¸º tokenï¼Œä¹Ÿä¸ä½¿ç”¨è‡ªå›žå½’ç»“æž„ï¼Œè€Œæ˜¯ç”±ä¸€ä¸ªæ¡ä»¶æ‰©æ•£æ¨¡åž‹ç›´æŽ¥ä»Žé«˜æ–¯å™ªå£°ä¸­é‡‡æ ·ï¼Œé€æ­¥åŽ»å™ªèŽ·å¾—å®Œæ•´åŠ¨ä½œå‘é‡ã€‚
 
 ---
 
-### Èý¡¢ÑµÁ·ÓëÍÆÀíÁ÷³Ì
+### äºŒã€Action Head çš„ç»“æž„ä¸Žæœºåˆ¶
 
-#### ÑµÁ·½×¶Î£º
-- ËðÊ§º¯Êý×éºÏ£º
+#### è¾“å…¥æ¡ä»¶ï¼š
+- å¤šæ¨¡æ€ç¼–ç ï¼ˆå›¾åƒã€æ–‡æœ¬ï¼‰æ¥è‡ª VLM backboneï¼›
+- æŽ¨ç†ç»“æžœï¼ˆReasoning Tokenï¼‰é€šè¿‡ **FiLMï¼ˆFeature-wise Linear Modulationï¼‰** æ³¨å…¥æ‰©æ•£æ¨¡åž‹ï¼Œä½œä¸ºæ¡ä»¶å‘é‡ï¼›
+- æŽ§åˆ¶ç›®æ ‡ä¸ºæœºå™¨äººçš„ joint-space åŠ¨ä½œï¼ˆå¦‚ 7DOF æœ«ç«¯ + gripperï¼‰ã€‚
+
+#### æ‰©æ•£è¿‡ç¨‹ï¼š
+- ä½¿ç”¨æ ‡å‡† DDPM æ‰©æ•£è¿‡ç¨‹ï¼Œåœ¨ latent ç©ºé—´è¿›è¡ŒåŠ¨ä½œå»ºæ¨¡ï¼›
+- æ¯æ­¥åŠ¨ä½œä»Žé«˜æ–¯å™ªå£°é€æ­¥åŽ»å™ªç”Ÿæˆï¼›
+- æŽ§åˆ¶é¢‘çŽ‡é«˜è¾¾ 82Hzï¼ˆDiVLA-2Bï¼‰ï¼Œå¯éƒ¨ç½²äºŽçœŸå®žæœºå™¨äººã€‚
+
+#### è¾“å‡ºå±‚ï¼š
+- æ‰©æ•£è¿‡ç¨‹æœ€åŽè¿žæŽ¥ä¸€ä¸ª MLP è§£ç å™¨ï¼Œç”¨äºŽå°†åŽ»å™ª latent æ˜ å°„ä¸ºå…·ä½“åŠ¨ä½œï¼›
+- è‹¥æ¢ robot embodimentï¼Œä»…éœ€æ›¿æ¢ MLP è¾“å‡ºå±‚ï¼ˆæ— éœ€é‡è®­æ¨¡åž‹ï¼‰ã€‚
+
+---
+
+### ä¸‰ã€è®­ç»ƒä¸ŽæŽ¨ç†æµç¨‹
+
+#### è®­ç»ƒé˜¶æ®µï¼š
+- æŸå¤±å‡½æ•°ç»„åˆï¼š
   \[
   \mathcal{L} = \mathcal{L}_{\text{diffusion}} + \alpha \cdot \mathcal{L}_{\text{NTP}}
   \]
-  ÆäÖÐ£º
-  - \( \mathcal{L}_{\text{diffusion}} \)£ºÓÃÓÚÑµÁ·¶¯×÷½âÂëÆ÷£»
-  - \( \mathcal{L}_{\text{NTP}} \)£ºÓÃÓÚÑµÁ·ÍÆÀíÄ£¿éµÄ next-token prediction£»
-  - \( \alpha = 1 \)£¬±£Ö¤ÍÆÀíºÍ¿ØÖÆÑ§Ï°Æ½ºâ¡£
+  å…¶ä¸­ï¼š
+  - $ \( \mathcal{L}_{\text{diffusion}} \) $ï¼šç”¨äºŽè®­ç»ƒåŠ¨ä½œè§£ç å™¨ï¼›
+  - $ \( \mathcal{L}_{\text{NTP}} \) $ï¼šç”¨äºŽè®­ç»ƒæŽ¨ç†æ¨¡å—çš„ next-token predictionï¼›
+  - $ \( \alpha = 1 \) $ï¼Œä¿è¯æŽ¨ç†å’ŒæŽ§åˆ¶å­¦ä¹ å¹³è¡¡ã€‚
 
-#### ÍÆÀí½×¶Î£º
-- ÓïÑÔÊäÈëÉú³É reasoning phrase£»
-- ½«ÍÆÀí embedding ×¢ÈëÀ©É¢Ä£ÐÍ£¨FiLM ×¢Èë£©£»
-- ´Ó¸ßË¹ÔëÉù²ÉÑù¶¯×÷ latent£¬10 ²½·´ÏòÉú³É¿ØÖÆ¶¯×÷¡£
+#### æŽ¨ç†é˜¶æ®µï¼š
+- è¯­è¨€è¾“å…¥ç”Ÿæˆ reasoning phraseï¼›
+- å°†æŽ¨ç† embedding æ³¨å…¥æ‰©æ•£æ¨¡åž‹ï¼ˆFiLM æ³¨å…¥ï¼‰ï¼›
+- ä»Žé«˜æ–¯å™ªå£°é‡‡æ ·åŠ¨ä½œ latentï¼Œ10 æ­¥åå‘ç”ŸæˆæŽ§åˆ¶åŠ¨ä½œã€‚
 
 ---
 
-### ËÄ¡¢ÓëÆäËûÄ£ÐÍ¶Ô±È£¨Action Head£©
+### å››ã€ä¸Žå…¶ä»–æ¨¡åž‹å¯¹æ¯”ï¼ˆAction Headï¼‰
 
-| Ä£ÐÍ         | Action Head ÀàÐÍ                      | ÊÇ·ñ×Ô»Ø¹é | ÊÇ·ñÓïÑÔÁª¶¯ | ¿ØÖÆÆµÂÊ | ÌØµã                     |
+| æ¨¡åž‹         | Action Head ç±»åž‹                      | æ˜¯å¦è‡ªå›žå½’ | æ˜¯å¦è¯­è¨€è”åŠ¨ | æŽ§åˆ¶é¢‘çŽ‡ | ç‰¹ç‚¹                     |
 |--------------|----------------------------------------|--------------|----------------|------------|--------------------------|
-| RT-2         | Token autoregression + de-tokenizer    | ÊÇ           | ÊÇ             | Âý         | Í³Ò» token ¿Õ¼ä          |
-| OpenVLA      | token ¡ú de-tokenizer                   | ÊÇ           | ÊÇ             | Âý         | ·ÖÀë action tokenizer     |
-| ¦Ð0           | Flow Matching Expert                   | ·ñ         | ÊÇ             | ¸ß£¨50Hz£© | ¾«È·½¨Ä£¶¯×÷Á÷           |
-| CogACT       | Reasoning + Latent Diffusion Head      | ·ñ         | ÊÇ£¨LLMÍÆÀí£©   | ÖÐ¸ß        | ½á¹¹½âñî£¬¿É½âÊÍÍÆÀí×¢Èë |
-| **Diffusion-VLA** | **LLMÍÆÀí + FiLM×¢Èë + Latent Diffusion** | ·ñ           | ÊÇ             | ÊÇ£¨82Hz£©| **ÍÆÀíÈÚºÏ + ¸ßÐ§¿ØÖÆ**     |
+| RT-2         | Token autoregression + de-tokenizer    | æ˜¯           | æ˜¯             | æ…¢         | ç»Ÿä¸€ token ç©ºé—´          |
+| OpenVLA      | token â†’ de-tokenizer                   | æ˜¯           | æ˜¯             | æ…¢         | åˆ†ç¦» action tokenizer     |
+| Ï€0           | Flow Matching Expert                   | å¦         | æ˜¯             | é«˜ï¼ˆ50Hzï¼‰ | ç²¾ç¡®å»ºæ¨¡åŠ¨ä½œæµ           |
+| CogACT       | Reasoning + Latent Diffusion Head      | å¦         | æ˜¯ï¼ˆLLMæŽ¨ç†ï¼‰   | ä¸­é«˜        | ç»“æž„è§£è€¦ï¼Œå¯è§£é‡ŠæŽ¨ç†æ³¨å…¥ |
+| **Diffusion-VLA** | **LLMæŽ¨ç† + FiLMæ³¨å…¥ + Latent Diffusion** | å¦           | æ˜¯             | æ˜¯ï¼ˆ82Hzï¼‰| **æŽ¨ç†èžåˆ + é«˜æ•ˆæŽ§åˆ¶**     |
 
 ---
 
-### Îå¡¢Éè¼ÆÓÅÊÆ×Ü½á
+### äº”ã€è®¾è®¡ä¼˜åŠ¿æ€»ç»“
 
-- **Ë«Ä£ÈÚºÏ£¨ÓïÑÔ + ¿ØÖÆ£©**£º½« LLM ÍÆÀíÓëÀ©É¢¶¯×÷Éú³ÉÍêÃÀ½áºÏ£»
-- **½á¹¹½âñî£¬¸ßÐ§ÊÊÅä**£ºVLM Óë Diffusion Head ·ÖÀë£¬¿É¿ìËÙÊÊÅäÐÂ»úÆ÷ÈË£»
-- **¿ìËÙÍÆÀí²¿Êð**£ºDiVLA-2B ¿É´ï 82Hz ¿ØÖÆËÙÂÊ£¬Ô¶¸ßÓÚ OpenVLA£¨5Hz£©£»
-- **¿ÉÀ©Õ¹ÐÔÇ¿**£ºÄ£ÐÍ¿É´Ó 2B ¡ú 7B ¡ú 72B£¬ÎÞÐè¸Ä¶¯½á¹¹£»
-- **ÎÞÐè¶¯×÷ chunking**£ºÍêÕûÉú³É¸ßÖÊÁ¿¶¯×÷ÐòÁÐ£¬·º»¯ÄÜÁ¦ÓÅÓÚ ¦Ð0 Àà½á¹¹£»
-- **ÍÆÀí¿É×¢Èë¿ÉÕï¶Ï**£ºReasoning phrase ¿É²é¿´£¬ÓÐÖúÓÚ²ßÂÔ¿É½âÊÍÐÔÓëµ÷ÊÔ¡£
+- **åŒæ¨¡èžåˆï¼ˆè¯­è¨€ + æŽ§åˆ¶ï¼‰**ï¼šå°† LLM æŽ¨ç†ä¸Žæ‰©æ•£åŠ¨ä½œç”Ÿæˆå®Œç¾Žç»“åˆï¼›
+- **ç»“æž„è§£è€¦ï¼Œé«˜æ•ˆé€‚é…**ï¼šVLM ä¸Ž Diffusion Head åˆ†ç¦»ï¼Œå¯å¿«é€Ÿé€‚é…æ–°æœºå™¨äººï¼›
+- **å¿«é€ŸæŽ¨ç†éƒ¨ç½²**ï¼šDiVLA-2B å¯è¾¾ 82Hz æŽ§åˆ¶é€ŸçŽ‡ï¼Œè¿œé«˜äºŽ OpenVLAï¼ˆ5Hzï¼‰ï¼›
+- **å¯æ‰©å±•æ€§å¼º**ï¼šæ¨¡åž‹å¯ä»Ž 2B â†’ 7B â†’ 72Bï¼Œæ— éœ€æ”¹åŠ¨ç»“æž„ï¼›
+- **æ— éœ€åŠ¨ä½œ chunking**ï¼šå®Œæ•´ç”Ÿæˆé«˜è´¨é‡åŠ¨ä½œåºåˆ—ï¼Œæ³›åŒ–èƒ½åŠ›ä¼˜äºŽ Ï€0 ç±»ç»“æž„ï¼›
+- **æŽ¨ç†å¯æ³¨å…¥å¯è¯Šæ–­**ï¼šReasoning phrase å¯æŸ¥çœ‹ï¼Œæœ‰åŠ©äºŽç­–ç•¥å¯è§£é‡Šæ€§ä¸Žè°ƒè¯•ã€‚
 
