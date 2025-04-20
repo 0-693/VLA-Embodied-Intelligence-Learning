@@ -52,11 +52,11 @@ CogACT 将动作建模过程分为两阶段：
 - 使用 diffusion decoder 预测噪声或 denoising vector；
 - 优化 DDPM 损失：
 
-  $$
-  \begin{align*}
+$$
+  \[
   \mathcal{L}_{\text{diff}} = \mathbb{E}[\|\epsilon - \epsilon_\theta(x_t, c)\|^2]
-  \end{align*}
-  $$
+  \]
+$$
 
 #### 推理阶段：
 
