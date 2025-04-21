@@ -1,86 +1,93 @@
 
 
-## Octo µÄ Action Head Éè¼ÆÏê½â
+## Octo çš„ Action Head è®¾è®¡è¯¦è§£
 
-Octo ÊÇÒ»¸öÃæÏò¶à»úÆ÷ÈË¡¢¶àÈÎÎñµÄÍ¨ÓÃ²ßÂÔÄ£ÐÍ¡£Æä **Action Head** ²ÉÓÃ **Ìõ¼þÀ©É¢²ßÂÔ½âÂëÆ÷£¨conditional diffusion decoding head£©** À´Ö±½ÓÉú³ÉÁ¬Ðø¶¯×÷£¬Ö§³ÖÉú³É¸ßÖÊÁ¿¡¢¶àÄ£Ì¬¡¢¾«Ï¸¿ØÖÆ¶¯×÷ÐòÁÐ¡£ÕâÖÖÉè¼Æ°ÚÍÑÁË´«Í³ MSE »Ø¹é»òÀëÉ¢ token ·ÖÀàµÄÏÞÖÆ£¬ÔÚÐÔÄÜºÍ¿É±í´ïÐÔÉÏ¾ùÈ¡µÃÏÔÖøÌáÉý¡£
+Octo æ˜¯ä¸€ä¸ªé¢å‘å¤šæœºå™¨äººã€å¤šä»»åŠ¡çš„é€šç”¨ç­–ç•¥æ¨¡åž‹ã€‚å…¶ **Action Head** é‡‡ç”¨ **æ¡ä»¶æ‰©æ•£ç­–ç•¥è§£ç å™¨ï¼ˆconditional diffusion decoding headï¼‰** æ¥ç›´æŽ¥ç”Ÿæˆè¿žç»­åŠ¨ä½œï¼Œæ”¯æŒç”Ÿæˆé«˜è´¨é‡ã€å¤šæ¨¡æ€ã€ç²¾ç»†æŽ§åˆ¶åŠ¨ä½œåºåˆ—ã€‚è¿™ç§è®¾è®¡æ‘†è„±äº†ä¼ ç»Ÿ MSE å›žå½’æˆ–ç¦»æ•£ token åˆ†ç±»çš„é™åˆ¶ï¼Œåœ¨æ€§èƒ½å’Œå¯è¡¨è¾¾æ€§ä¸Šå‡å–å¾—æ˜¾è‘—æå‡ã€‚
 
 ---
 
-### Ò»¡¢ºËÐÄË¼Ïë
+### ä¸€ã€æ ¸å¿ƒæ€æƒ³
 
-Octo µÄ Action Head ²»ÔÙ½«¶¯×÷ÀëÉ¢Îª token »òÖ±½ÓÓÃ MSE »Ø¹éµ¥²½¶¯×÷£¬¶øÊÇÊ¹ÓÃ**À©É¢Ä£ÐÍ£¨Diffusion Model£©**ÔÚÁ¬Ðø¶¯×÷¿Õ¼äÖÐ½øÐÐ½¨Ä££¬Êä³öÍêÕûµÄÁ¬Ðø¶¯×÷ chunk¡£
+Octo çš„ Action Head ä¸å†å°†åŠ¨ä½œç¦»æ•£ä¸º token æˆ–ç›´æŽ¥ç”¨ MSE å›žå½’å•æ­¥åŠ¨ä½œï¼Œè€Œæ˜¯ä½¿ç”¨**æ‰©æ•£æ¨¡åž‹ï¼ˆDiffusion Modelï¼‰**åœ¨è¿žç»­åŠ¨ä½œç©ºé—´ä¸­è¿›è¡Œå»ºæ¨¡ï¼Œè¾“å‡ºå®Œæ•´çš„è¿žç»­åŠ¨ä½œ chunkã€‚
 
-| ¿ØÖÆÎ¬¶È       | ±í´ïÄÚÈÝ                                    |
+| æŽ§åˆ¶ç»´åº¦       | è¡¨è¾¾å†…å®¹                                    |
 |----------------|---------------------------------------------|
-| ¦¤Position (3D) | Ä©¶ËÖ´ÐÐÆ÷Î»ÖÃ±ä»¯£¨x, y, z£©                |
-| ¦¤Rotation (3D) | ×ËÌ¬±ä»¯£¨roll, pitch, yaw£©                 |
-| Gripper (1D)   | ×¥È¡Æ÷¿ØÖÆ£¨¿ª/ºÏ£©                          |
-| **×Ü¼Æ**        | **7Î¬Á¬Ðø¿ØÖÆ¶¯×÷£¬»ò¸ü¶à£¨ÈçË«±Û14Î¬£©**     |
+| Î”Position (3D) | æœ«ç«¯æ‰§è¡Œå™¨ä½ç½®å˜åŒ–ï¼ˆx, y, zï¼‰                |
+| Î”Rotation (3D) | å§¿æ€å˜åŒ–ï¼ˆroll, pitch, yawï¼‰                 |
+| Gripper (1D)   | æŠ“å–å™¨æŽ§åˆ¶ï¼ˆå¼€/åˆï¼‰                          |
+| **æ€»è®¡**        | **7ç»´è¿žç»­æŽ§åˆ¶åŠ¨ä½œï¼Œæˆ–æ›´å¤šï¼ˆå¦‚åŒè‡‚14ç»´ï¼‰**     |
 
-´ËÍâ£¬ÔÚ¶àÈÎÎñ³¡¾°ÏÂ£¬Octo Ö§³Ö¶¯×÷ chunking£¨Ò»´ÎÔ¤²â¶à²½£©£¬ÊÊÓÃÓÚ³¤Ê±¼ä¡¢ÎÈ¶¨¿ØÖÆ¡£
-
----
-
-### ¶þ¡¢Action Head ½á¹¹Óë»úÖÆ
-
-#### ¶¯×÷Í·½á¹¹£º
-
-- Action Head ÊÇÒ»¸ö**3²ã MLP**£¨Òþ²ØÎ¬¶È256£¬´ø LayerNorm ºÍ²Ð²î£©£»
-- ½ÓÊÕÀ´×Ô transformer µÄ **Readout Token** embedding£»
-- Êä³öÒ»¸ö³¤¶ÈÎª L£¨Èç L=4£©µÄ¶¯×÷ chunk£¬Ã¿¸ö chunk ÊÇÒ»×éÁ¬Ðø¿ØÖÆÖµ¡£
-
-#### À©É¢¹ý³Ì£º
-
-- Ê¹ÓÃ±ê×¼ DDPM »úÖÆ½øÐÐÑµÁ·ºÍÉú³É£¬°üº¬ 20 ²½·´ÏòÈ¥Ôë£º
-  \[
-  x_{k-1} = \alpha(x_k - \gamma \epsilon_\theta(x_k, e, k)) + \mathcal{N}(0, \sigma^2 I)
-  \]
-  ÆäÖÐ \(x_k\) ÊÇµ±Ç°ÔëÉù×´Ì¬£¬\(e\) Îª transformer Ìá¹©µÄÉÏÏÂÎÄ±íÊ¾£¬\(\epsilon_\theta\) ÊÇÔ¤²âÍøÂç¡£
-
-- ÔëÉùµ÷¶È²ÉÓÃ cosine schedule¡£
-
-#### ¶¯×÷ chunk ±í´ï£º
-
-- Êä³öÎªÒ»¸ö»ò¶à¸öÁ¬Ðø¶¯×÷£¨Èç£º64Ö¡£¬·ÖÅúÖ´ÐÐ£©£»
-- Ã¿¸ö chunk ¿ÉÓÃÓÚ receding horizon control£¨RHC£©»òÖ±½ÓÖ´ÐÐ¡£
+æ­¤å¤–ï¼Œåœ¨å¤šä»»åŠ¡åœºæ™¯ä¸‹ï¼ŒOcto æ”¯æŒåŠ¨ä½œ chunkingï¼ˆä¸€æ¬¡é¢„æµ‹å¤šæ­¥ï¼‰ï¼Œé€‚ç”¨äºŽé•¿æ—¶é—´ã€ç¨³å®šæŽ§åˆ¶ã€‚
 
 ---
 
-### Èý¡¢ÑµÁ·ÓëÍÆÀíÁ÷³Ì
+### äºŒã€Action Head ç»“æž„ä¸Žæœºåˆ¶
 
-#### ÑµÁ·½×¶Î£º
-- ½« ground-truth ¶¯×÷¼ÓÈë¸ßË¹ÔëÉù ¡ú µÃµ½ \(x_k\)£»
-- Ä£ÐÍÑ§Ï°´Ó \(x_k\) Ô¤²âÈ¥ÔëÏòÁ¿ \(\epsilon\)£¬»¹Ô­Ô­Ê¼¶¯×÷£»
-- ËðÊ§º¯ÊýÎª DDPM ËðÊ§£º
+#### åŠ¨ä½œå¤´ç»“æž„ï¼š
+
+- Action Head æ˜¯ä¸€ä¸ª**3å±‚ MLP**ï¼ˆéšè—ç»´åº¦256ï¼Œå¸¦ LayerNorm å’Œæ®‹å·®ï¼‰ï¼›
+- æŽ¥æ”¶æ¥è‡ª transformer çš„ **Readout Token** embeddingï¼›
+- è¾“å‡ºä¸€ä¸ªé•¿åº¦ä¸º Lï¼ˆå¦‚ L=4ï¼‰çš„åŠ¨ä½œ chunkï¼Œæ¯ä¸ª chunk æ˜¯ä¸€ç»„è¿žç»­æŽ§åˆ¶å€¼ã€‚
+
+#### æ‰©æ•£è¿‡ç¨‹ï¼š
+
+- ä½¿ç”¨æ ‡å‡† DDPM æœºåˆ¶è¿›è¡Œè®­ç»ƒå’Œç”Ÿæˆï¼ŒåŒ…å« 20 æ­¥åå‘åŽ»å™ªï¼š
+
+$$
+\begin{align*}
+x_{k-1} &= \alpha \left( x_k - \gamma \epsilon_\theta \left( x_k, e, k \right) \right) + \mathcal{N} \left( 0, \sigma^2 I \right)
+\end{align*}
+$$
+
+å…¶ä¸­ $x_k$ æ˜¯å½“å‰å™ªå£°çŠ¶æ€ï¼Œ $e$ ä¸º transformer æä¾›çš„ä¸Šä¸‹æ–‡è¡¨ç¤ºï¼Œ $\epsilon_\theta$ æ˜¯é¢„æµ‹ç½‘ç»œã€‚
+
+- å™ªå£°è°ƒåº¦é‡‡ç”¨ cosine scheduleã€‚
+
+
+
+
+#### åŠ¨ä½œ chunk è¡¨è¾¾ï¼š
+
+- è¾“å‡ºä¸ºä¸€ä¸ªæˆ–å¤šä¸ªè¿žç»­åŠ¨ä½œï¼ˆå¦‚ï¼š64å¸§ï¼Œåˆ†æ‰¹æ‰§è¡Œï¼‰ï¼›
+- æ¯ä¸ª chunk å¯ç”¨äºŽ receding horizon controlï¼ˆRHCï¼‰æˆ–ç›´æŽ¥æ‰§è¡Œã€‚
+
+---
+
+### ä¸‰ã€è®­ç»ƒä¸ŽæŽ¨ç†æµç¨‹
+
+#### è®­ç»ƒé˜¶æ®µï¼š
+- å°† ground-truth åŠ¨ä½œåŠ å…¥é«˜æ–¯å™ªå£° â†’ å¾—åˆ° \(x_k\)ï¼›
+- æ¨¡åž‹å­¦ä¹ ä»Ž \(x_k\) é¢„æµ‹åŽ»å™ªå‘é‡ \(\epsilon\)ï¼Œè¿˜åŽŸåŽŸå§‹åŠ¨ä½œï¼›
+- æŸå¤±å‡½æ•°ä¸º DDPM æŸå¤±ï¼š
   \[
   \mathcal{L} = \mathbb{E}[\|\epsilon - \epsilon_\theta(x_k, e, k)\|^2]
   \]
 
-#### ÍÆÀí½×¶Î£º
-- ²ÉÑù³õÊ¼¸ßË¹ÔëÉù \(x_K\)£»
-- Ê¹ÓÃÀ©É¢Ä£ÐÍµü´úÉú³É¶¯×÷ÐòÁÐ£»
-- ×îÖÕÊä³ö L ²½Á¬Ðø¶¯×÷£¬ÓÃÓÚ¿ØÖÆÆ÷Ö´ÐÐ¡£
+#### æŽ¨ç†é˜¶æ®µï¼š
+- é‡‡æ ·åˆå§‹é«˜æ–¯å™ªå£° \(x_K\)ï¼›
+- ä½¿ç”¨æ‰©æ•£æ¨¡åž‹è¿­ä»£ç”ŸæˆåŠ¨ä½œåºåˆ—ï¼›
+- æœ€ç»ˆè¾“å‡º L æ­¥è¿žç»­åŠ¨ä½œï¼Œç”¨äºŽæŽ§åˆ¶å™¨æ‰§è¡Œã€‚
 
 ---
 
-### ËÄ¡¢ÓëÆäËûÄ£ÐÍ¶Ô±È£¨¶¯×÷Í·£©
+### å››ã€ä¸Žå…¶ä»–æ¨¡åž‹å¯¹æ¯”ï¼ˆåŠ¨ä½œå¤´ï¼‰
 
-| Ä£ÐÍ         | Action HeadÀàÐÍ         | Token/²½ | ÊÇ·ñ×Ô»Ø¹é | ÊÇ·ñÖ§³Ö chunk | ±í´ïÄÜÁ¦ |
+| æ¨¡åž‹         | Action Headç±»åž‹         | Token/æ­¥ | æ˜¯å¦è‡ªå›žå½’ | æ˜¯å¦æ”¯æŒ chunk | è¡¨è¾¾èƒ½åŠ› |
 |--------------|--------------------------|----------|--------------|------------------|-----------|
-| RT-1         | ·ÖÀàÆ÷£¨ÀëÉ¢ token£©      | 11       | ·ñ           | ·ñ               | ÖÐ         |
-| RT-2         | ×Ô»Ø¹é token + de-token  | 7¨C8      | ÊÇ           | ·ñ               | ÖÐ         |
-| OpenVLA      | Token + De-tokenizer     | 7        | ÊÇ           | ·ñ               | ÖÐ         |
-| TinyVLA      | Diffusion£¨µ¥²½£©        | 1´ÎÉú³É  | ·ñ           | ·ñ               | ¸ß         |
-| **Octo**     | **Diffusion Chunk Decoder** | **1´ÎÉú³É¶à¸ö** | ·ñ        | ÊÇ£¨Ö§³Ö64²½£©     | ÊÇ£¨¼«¸ß£© |
+| RT-1         | åˆ†ç±»å™¨ï¼ˆç¦»æ•£ tokenï¼‰      | 11       | å¦           | å¦               | ä¸­         |
+| RT-2         | è‡ªå›žå½’ token + de-token  | 7â€“8      | æ˜¯           | å¦               | ä¸­         |
+| OpenVLA      | Token + De-tokenizer     | 7        | æ˜¯           | å¦               | ä¸­         |
+| TinyVLA      | Diffusionï¼ˆå•æ­¥ï¼‰        | 1æ¬¡ç”Ÿæˆ  | å¦           | å¦               | é«˜         |
+| **Octo**     | **Diffusion Chunk Decoder** | **1æ¬¡ç”Ÿæˆå¤šä¸ª** | å¦        | æ˜¯ï¼ˆæ”¯æŒ64æ­¥ï¼‰     | æ˜¯ï¼ˆæžé«˜ï¼‰ |
 
 ---
 
-### Îå¡¢Éè¼ÆÓÅÊÆ×Ü½á
+### äº”ã€è®¾è®¡ä¼˜åŠ¿æ€»ç»“
 
-- **¶à²½Ô¤²â¶¯×÷£¨chunking£©**£ºÖ§³Ö³¤Ê±¼äÎÈ¶¨¿ØÖÆ£¬¼õÉÙÎó²î»ýÀÛ£»
-- **¾«×¼½¨Ä£¶àÄ£Ì¬·Ö²¼**£ºÏà±È MSE ÄÜ½¨Ä£¶¯×÷µÄ¶àÑùÐÔ£¬ÌáÉý¿ØÖÆ±íÏÖ£»
-- **·Ç×Ô»Ø¹éÉú³É£¬ÍÆÀí¸ßÐ§**£º²»ÒÀÀµ token-by-token Êä³ö£¬Ò»´ÎÉú³ÉÕû¸ö¶¯×÷¿é£»
-- **Óë transformer ½âñî¿ÉÀ©Õ¹½á¹¹**£ºÖ»Ðè¶Ô readout token Ìí¼ÓÀ©É¢Í·£»
-- **ÊÊÅä¶à¶¯×÷¿Õ¼ä**£ºµ¥±Û£¨7D£©¡¢Ë«±Û£¨14D£©¡¢¹Ø½Ú¿ØÖÆ¾ù¿É´¦Àí£»
-- **ÓëÓïÑÔ/Í¼ÏñÊäÈë×ÔÈ»½áºÏ**£º¿É½ÓÊÜ goal image »òÓïÑÔÖ¸ÁîÌõ¼þÉú³É¡£
+- **å¤šæ­¥é¢„æµ‹åŠ¨ä½œï¼ˆchunkingï¼‰**ï¼šæ”¯æŒé•¿æ—¶é—´ç¨³å®šæŽ§åˆ¶ï¼Œå‡å°‘è¯¯å·®ç§¯ç´¯ï¼›
+- **ç²¾å‡†å»ºæ¨¡å¤šæ¨¡æ€åˆ†å¸ƒ**ï¼šç›¸æ¯” MSE èƒ½å»ºæ¨¡åŠ¨ä½œçš„å¤šæ ·æ€§ï¼Œæå‡æŽ§åˆ¶è¡¨çŽ°ï¼›
+- **éžè‡ªå›žå½’ç”Ÿæˆï¼ŒæŽ¨ç†é«˜æ•ˆ**ï¼šä¸ä¾èµ– token-by-token è¾“å‡ºï¼Œä¸€æ¬¡ç”Ÿæˆæ•´ä¸ªåŠ¨ä½œå—ï¼›
+- **ä¸Ž transformer è§£è€¦å¯æ‰©å±•ç»“æž„**ï¼šåªéœ€å¯¹ readout token æ·»åŠ æ‰©æ•£å¤´ï¼›
+- **é€‚é…å¤šåŠ¨ä½œç©ºé—´**ï¼šå•è‡‚ï¼ˆ7Dï¼‰ã€åŒè‡‚ï¼ˆ14Dï¼‰ã€å…³èŠ‚æŽ§åˆ¶å‡å¯å¤„ç†ï¼›
+- **ä¸Žè¯­è¨€/å›¾åƒè¾“å…¥è‡ªç„¶ç»“åˆ**ï¼šå¯æŽ¥å— goal image æˆ–è¯­è¨€æŒ‡ä»¤æ¡ä»¶ç”Ÿæˆã€‚
 
