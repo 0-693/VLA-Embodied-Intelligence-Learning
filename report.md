@@ -1367,9 +1367,9 @@ SpatialVLA 并没有独立的Action Head，而是将动作拆分并编码为离�
 
 ## 五、总结
 
-1. 从离散表示向连续建模过渡：传统RT-1/2的离散策略逐渐被flow/diffusion等连续生成方式取代。
+1. 从离散表示向连续建模过渡：传统RT-1/2的离散策略逐渐被flow/diffusion等连续生成方式取代。目前看来使用Flow Matching方式的π₀模型效果最好。
 2. 自回归限制被chunk解码替代：Octo、RDT-1B等使用chunk结构避免长序列token生成误差积累。
-3. 模块化结构成为主流：CogACT、Diffusion-VLA等将推理模块与动作生成模块解耦，利于泛化。
+3. 模块化结构成为主流：CogACT、Diffusion-VLA等将推理模块与动作生成模块解耦，利于泛化，Action Head模块的设计可能会变成主流。
 4. 控制频率成为重要指标：如Spatial VLA将token数压缩到了3个，大大提升了控制速度。
 
 
