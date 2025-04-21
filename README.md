@@ -1,7 +1,7 @@
 # VLA Embodied Intelligence Learning Hub
 
 本仓库是我个人学习入门 Vision-Language-Action (VLA) 具身智能领域的个人笔记，仅供参考。通过阅读主流论文、拆解模型架构并深入调研各类 Action Head 的实现方式，快速理解和掌握该领域的核心技术。
-
+（因为github网页markdown的渲染问题，有些公式可能无法正常在网页上显示，可以拉取md文件使用vs插件完成阅读）
 ---
 
 ## 项目内容概览
